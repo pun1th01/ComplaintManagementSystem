@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 export default function StudentDashboard() {
   // State for Complaint Form
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
+  // eslint-disable-next-line no-unused-vars
   const [image, setImage] = useState(null);
 
   // Dummy Data for Notices
@@ -161,7 +162,7 @@ export default function StudentDashboard() {
                 {notices.map((notice) => (
                   <div key={notice.id} className="group p-4 rounded-2xl border border-gray-50 hover:bg-gray-50 hover:border-gray-200 transition-all cursor-pointer">
                     <div className="flex items-start gap-4">
-                      <div className={w-12 h-12 rounded-xl flex items-center justify-center shrink-0 text-2xl }>
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 text-2xl ${notice.color}`}>
                         {notice.icon}
                       </div>
                       <div>
