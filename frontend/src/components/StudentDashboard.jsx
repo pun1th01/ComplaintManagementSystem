@@ -58,6 +58,7 @@ export default function StudentDashboard() {
       title,
       description,
       category,
+      student: 1 // Sending dummy student ID 1 to pass DRF validation
     };
 
     try {

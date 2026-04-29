@@ -1,7 +1,7 @@
-import StudentPortal from './components/StudentPortal';
+import StudentDashboard from './components/StudentDashboard';
 
 function App() {
-  return <StudentPortal />;
+  return <StudentDashboard />;
 }
 
 export default App;
