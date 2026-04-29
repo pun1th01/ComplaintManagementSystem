@@ -17,7 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import RoomViewSet, StudentViewSet, ComplaintViewSet, get_recommended_rooms
+from .views import RoomViewSet, StudentViewSet, ComplaintViewSet, get_recommended_rooms, TriggerEscalationView
 
 router = DefaultRouter()
 router.register(r'rooms', RoomViewSet)
@@ -28,4 +28,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include(router.urls)),
     path('api/recommended-rooms/', get_recommended_rooms, name='recommended-rooms'),
+    path('api/escalate/', TriggerEscalationView.as_view(), name='escalate-complaints'),
 ]
