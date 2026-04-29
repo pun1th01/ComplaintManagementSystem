@@ -1,8 +1,12 @@
 import json
+import os
 from groq import Groq
 
-# Initialize Groq client
-client = Groq()
+# Initialize Groq client with a safe fallback
+try:
+    client = Groq(api_key=os.environ.get("GROQ_API_KEY", "dummy_key"))
+except Exception:
+    client = None
 
 
 def categorize_complaint(text):
