@@ -1,0 +1,193 @@
+import React, { useState, useEffect } from 'react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { AlertCircle, CheckCircle, Activity } from 'lucide-react';
+import { format } from 'date-fns';
+
+const COLORS = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6'];
+
+export default function AdminDashboard() {
+  const [complaints, setComplaints] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // API Call
+  useEffect(() => {
+    const fetchComplaints = async () => {
+      try {
+        const response = await fetch('http://127.0.0.1:8000/api/complaints/');
+        if (!response.ok) throw new Error('Failed to fetch data');
+        const data = await response.json();
+        setComplaints(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchComplaints();
+  }, []);
+
+  // Stats Processing
+  const totalActive = complaints.length;
+  const criticalIssues = complaints.filter(c => c.priority_score >= 8).length;
+  // Based on your scenario, we don't have a distinct "resolved" field, defaulting to 0 for display
+  const recentlyResolved = 0; 
+
+  // Donut Chart Processing
+  const categoryCounts = complaints.reduce((acc, curr) => {
+    acc[curr.category] = (acc[curr.category] || 0) + 1;
+    return acc;
+  }, {});
+
+  const pieData = Object.keys(categoryCounts).map(key => ({
+    name: key,
+    value: categoryCounts[key]
+  }));
+
+  // Automatically sort Triage Table by priority_score (descending)
+  const sortedComplaints = [...complaints].sort((a, b) => b.priority_score - a.priority_score);
+
+  if (loading) return <div className="min-h-screen p-8 text-center text-gray-600 font-medium">Gathering Intelligence...</div>;
+  if (error) return <div className="min-h-screen p-8 text-center text-red-600 font-medium">Failed to connect: {error}. Check backend status.</div>;
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+      <div className="max-w-7xl mx-auto space-y-8">
+        
+        {/* Header */}
+        <header>
+          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Warden Dashboard</h1>
+          <p className="text-gray-500 mt-2 text-sm">Real-time facility triage & AI monitoring.</p>
+        </header>
+
+        {/* 1. Top Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
+            <div className="p-4 bg-blue-50 text-blue-600 rounded-full">
+              <Activity size={26} strokeWidth={2.5} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Total Active Complaints</p>
+              <p className="text-3xl font-bold text-gray-800 tracking-tight">{totalActive}</p>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
+            <div className="p-4 bg-red-50 text-red-600 rounded-full">
+              <AlertCircle size={26} strokeWidth={2.5} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Critical Issues (Priority 8+)</p>
+              <p className="text-3xl font-bold text-gray-800 tracking-tight">{criticalIssues}</p>
+            </div>
+          </div>
+
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center space-x-4">
+            <div className="p-4 bg-green-50 text-green-600 rounded-full">
+              <CheckCircle size={26} strokeWidth={2.5} />
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-gray-400 uppercase tracking-wider">Recently Resolved</p>
+              <p className="text-3xl font-bold text-gray-800 tracking-tight">{recentlyResolved}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* 2. Visual Analytics (Donut Chart) */}
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col h-full lg:col-span-1">
+            <h2 className="text-lg font-bold text-gray-800 mb-6 pb-2 border-b border-gray-50 text-center">Complaints by Category</h2>
+            <div className="flex-grow w-full min-h-[300px] flex items-center justify-center">
+              {pieData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={70}
+                      outerRadius={100}
+                      paddingAngle={4}
+                      dataKey="value"
+                      stroke="none"
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip cursor={{fill: 'transparent'}} />
+                    <Legend iconType="circle" wrapperStyle={{ paddingTop: "20px" }} />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <p className="text-gray-400 text-sm font-medium">No chart data available</p>
+              )}
+            </div>
+          </div>
+
+          {/* 3. The Triage Table */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 lg:col-span-2 overflow-hidden flex flex-col h-full">
+            <div className="p-6 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
+              <div>
+                <h2 className="text-lg font-bold text-gray-800">Triage Table</h2>
+                <p className="text-xs text-gray-500 font-medium tracking-wide">AUTOMATICALLY SORTED BY PRIORITY</p>
+              </div>
+            </div>
+            <div className="overflow-x-auto flex-grow">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-white text-gray-400 text-xs uppercase tracking-wider border-b border-gray-100">
+                    <th className="py-4 px-6 font-semibold w-24">Urgency</th>
+                    <th className="py-4 px-6 font-semibold">Category</th>
+                    <th className="py-4 px-6 font-semibold hidden md:table-cell">Description</th>
+                    <th className="py-4 px-6 font-semibold w-40">Date</th>
+                  </tr>
+                </thead>
+                <tbody className="text-sm">
+                  {sortedComplaints.map((complaint) => {
+                    const isCritical = complaint.priority_score >= 8;
+                    return (
+                      <tr 
+                        key={complaint.id} 
+                        className={`border-b border-gray-50 last:border-0 hover:bg-gray-50 transition duration-150 ${
+                          isCritical ? 'bg-red-50/60 hover:bg-red-50' : 'bg-white'
+                        }`}
+                      >
+                        <td className="py-4 px-6">
+                            <span className={`inline-flex min-w-[36px] items-center justify-center px-2 py-1 rounded-md text-xs font-bold ${
+                              isCritical ? 'bg-red-600 text-white shadow-sm' : 
+                              complaint.priority_score >= 5 ? 'bg-orange-500 text-white' : 
+                              'bg-gray-200 text-gray-700'
+                            }`}>
+                              {complaint.priority_score}
+                            </span>
+                        </td>
+                        <td className={`py-4 px-6 font-bold tracking-tight ${isCritical ? 'text-red-900' : 'text-gray-800'}`}>
+                          {complaint.category}
+                        </td>
+                        <td className="py-4 px-6 text-gray-600 font-medium hidden md:table-cell max-w-[200px] truncate" title={complaint.description}>
+                          {complaint.description}
+                        </td>
+                        <td className="py-4 px-6 text-gray-400 font-medium text-xs whitespace-nowrap">
+                          {complaint.timestamp ? format(new Date(complaint.timestamp), "MMM d, h:mm a") : 'Unknown Date'}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {sortedComplaints.length === 0 && (
+                    <tr>
+                      <td colSpan="4" className="py-12 text-center text-gray-400 font-medium">
+                        No active complaints to triage.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}
