@@ -1,5 +1,7 @@
+import base64
 import json
 import os
+import re
 from groq import Groq
 from dotenv import load_dotenv
 
@@ -13,13 +15,14 @@ except Exception:
     client = None
 
 
-def categorize_complaint(text):
+def categorize_complaint(text, image_bytes=None, mime_type="image/jpeg"):
     """
-    Analyzes a complaint string using Groq's Llama 3 model and returns
-    a categorization with priority score.
+    Analyzes a complaint string using Groq's Llama model and returns
+    a categorization with priority score. If an image is provided, 
+    uses a multi-modal vision model.
     """
     system_prompt = """You are a Hostel Triage Manager. 
-    Analyze the given complaint and return a strictly parsable JSON string EXACTLY like this:
+    Analyze the given complaint (and image if provided) and return a strictly parsable JSON string EXACTLY like this:
     {"category": "Plumbing", "priority_score": 8}
     
     The category MUST be one of the following:
@@ -33,25 +36,40 @@ def categorize_complaint(text):
     Assign a priority score from 1-10 (10 being highest danger/urgency).
     Respond ONLY with the JSON object. Do not include any markdown formatting, backticks, or extra text."""
     
-    user_message = f"Complaint to categorize: {text}"
+    if image_bytes:
+        model_name = "llama-3.2-11b-vision-preview"
+        base64_image = base64.b64encode(image_bytes).decode('utf-8')
+        user_message_content = [
+            {"type": "text", "text": f"Complaint to categorize: {text}"},
+            {
+                "type": "image_url",
+                "image_url": {
+                    "url": f"data:{mime_type};base64,{base64_image}",
+                },
+            },
+        ]
+    else:
+        model_name = "llama-3.1-70b-versatile"
+        user_message_content = f"Complaint to categorize: {text}"
     
     try:
         message = client.messages.create(
-            model="llama-3.1-70b-versatile",
+            model=model_name,
             max_tokens=100,
             system=system_prompt,
             messages=[
-                {"role": "user", "content": user_message}
+                {"role": "user", "content": user_message_content}
             ],
             temperature=0.0
         )
         
         response_text = message.content[0].text.strip()
-        # Remove markdown code blocks if the AI accidentally includes them
-        if response_text.startswith("```json"):
-            response_text = response_text[7:-3].strip()
-        elif response_text.startswith("```"):
-            response_text = response_text[3:-3].strip()
+        
+        # Robust fallback extraction for strict JSON enforcing
+        # If the LLM wraps the response in markdown, or adds chatter, find the first '{' and last '}'
+        match = re.search(r'\{.*\}', response_text, re.DOTALL)
+        if match:
+            response_text = match.group(0)
             
         result = json.loads(response_text)
         

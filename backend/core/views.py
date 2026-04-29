@@ -21,10 +21,19 @@ class ComplaintViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         description = serializer.validated_data.get('description', '')
+        image = self.request.FILES.get('image')
         
-        # Trigger the AI script for description text
-        if description:
-            ai_data = categorize_complaint(description)
+        # Trigger the AI script for description text & image
+        if description or image:
+            image_bytes = None
+            mime_type = "image/jpeg"
+            
+            if image:
+                image_bytes = image.read()
+                mime_type = image.content_type
+            
+            ai_data = categorize_complaint(description, image_bytes=image_bytes, mime_type=mime_type)
+            
             # Inject category and priority_score from AI into the save logic
             serializer.save(
                 category=ai_data.get('category', 'General'), 

@@ -10,25 +10,18 @@ class Command(BaseCommand):
         # Calculate the threshold time (48 hours ago)
         threshold_time = timezone.now() - timedelta(hours=48)
         
-        # Note: Assuming the status field exists on the Complaint model. 
-        # If it doesn't, this will throw an error and you will need to add it to models.py
-        # and create a migration or adapt this query if the field is named differently.
         try:
             complaints_to_escalate = Complaint.objects.exclude(status='Resolved').filter(
                 timestamp__lt=threshold_time
             )
             
-            escalated_count = 0
-            
+            count = 0
             for complaint in complaints_to_escalate:
-                if complaint.priority_score < 10:
-                    escalated_score = min(complaint.priority_score + 2, 10)
-                    complaint.priority_score = escalated_score
-                    complaint.save()
-                    escalated_count += 1
+                old_score = complaint.priority_score
+                complaint.priority_score = min(10, complaint.priority_score + 2)
+                complaint.save()
+                count += 1
             
-            self.stdout.write(self.style.SUCCESS(
-                f'Successfully escalated {escalated_count} neglected complaint(s).'
-            ))
+            self.stdout.write(self.style.SUCCESS(f'Successfully escalated {count} complaints.'))
         except Exception as e:
-            self.stdout.write(self.style.ERROR(f'Error escalating complaints: {str(e)}'))
+            self.stdout.write(self.style.ERROR(f'Error escalating complaints: {e}'))
