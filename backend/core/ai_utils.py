@@ -88,13 +88,17 @@ def match_roommates(target_student_dict, available_students_list):
     
     Compatibility scoring:
     - Sleep schedule match: +5 points
+    - Dietary preference match: +4 points
     - Year match (cohort): +3 points
-    - Course match: +2 points
+    - Balcony preference match: +2 points
+    - Course match: +1 point
     
     Args:
         target_student_dict (dict): Target student data with keys:
             - 'sleep_schedule' (str): Sleep preference (e.g., "early", "late")
+            - 'dietary_preference' (str): Diet (e.g., "veg", "non-veg")
             - 'year' (int): Academic year (e.g., 1, 2, 3, 4)
+            - 'balcony_preference' (bool): Wants a balcony or not
             - 'course' (str): Course name (e.g., "Computer Science")
         
         available_students_list (list): List of student dicts with same structure
@@ -107,14 +111,14 @@ def match_roommates(target_student_dict, available_students_list):
               - 'compatibility_score' (int): Total compatibility score
     
     Example:
-        >>> target = {'sleep_schedule': 'early', 'year': 2, 'course': 'CS'}
+        >>> target = {'sleep_schedule': 'early', 'dietary_preference': 'veg', 'year': 2, 'balcony_preference': True, 'course': 'CS'}
         >>> available = [
-        ...     {'name': 'Alice', 'sleep_schedule': 'early', 'year': 2, 'course': 'CS'},
-        ...     {'name': 'Bob', 'sleep_schedule': 'late', 'year': 1, 'course': 'Math'}
+        ...     {'name': 'Alice', 'sleep_schedule': 'early', 'dietary_preference': 'veg', 'year': 2, 'balcony_preference': True, 'course': 'CS'},
+        ...     {'name': 'Bob', 'sleep_schedule': 'late', 'dietary_preference': 'non-veg', 'year': 1, 'balcony_preference': False, 'course': 'Math'}
         ... ]
         >>> matches = match_roommates(target, available)
         >>> matches[0]['compatibility_score']
-        10
+        15
     """
     matches = []
     
@@ -125,15 +129,24 @@ def match_roommates(target_student_dict, available_students_list):
         if (target_student_dict.get('sleep_schedule', '').lower() ==
             student.get('sleep_schedule', '').lower()):
             compatibility_score += 5
+            
+        # Check dietary preference match (+4)
+        if (target_student_dict.get('dietary_preference', '').lower() ==
+            student.get('dietary_preference', '').lower()):
+            compatibility_score += 4
         
         # Check year match (+3)
         if target_student_dict.get('year') == student.get('year'):
             compatibility_score += 3
+            
+        # Check balcony preference match (+2)
+        if target_student_dict.get('balcony_preference') == student.get('balcony_preference'):
+            compatibility_score += 2
         
-        # Check course match (+2)
+        # Check course match (+1)
         if (target_student_dict.get('course', '').lower() ==
             student.get('course', '').lower()):
-            compatibility_score += 2
+            compatibility_score += 1
         
         # Create a result entry with the student data and compatibility score
         result_entry = student.copy()
