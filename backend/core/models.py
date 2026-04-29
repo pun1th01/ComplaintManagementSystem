@@ -8,16 +8,24 @@ class Room(models.Model):
     ]
     room_number = models.CharField(max_length=10, unique=True)
     occupancy_status = models.CharField(max_length=20, choices=OCCUPANCY_CHOICES, default='vacant')
+    is_balcony_room = models.BooleanField(default=False)
 
     def __str__(self):
         return f"Room {self.room_number}"
 
 class Student(models.Model):
+    DIETARY_CHOICES = [
+        ('veg', 'Veg'),
+        ('non_veg', 'Non-Veg'),
+        ('vegan', 'Vegan'),
+    ]
     name = models.CharField(max_length=100)
     course = models.CharField(max_length=100)
     year = models.PositiveIntegerField()
     sleep_schedule = models.CharField(max_length=100, help_text="e.g., Early Bird, Night Owl")
     room = models.ForeignKey(Room, on_delete=models.SET_NULL, null=True, blank=True, related_name='students')
+    dietary_preference = models.CharField(max_length=20, choices=DIETARY_CHOICES, default='veg')
+    balcony_preference = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.name} - {self.course} (Year {self.year})"
