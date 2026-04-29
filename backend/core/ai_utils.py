@@ -17,34 +17,21 @@ def categorize_complaint(text):
     """
     Analyzes a complaint string using Groq's Llama 3 model and returns
     a categorization with priority score.
-    
-    Args:
-        text (str): The complaint text to analyze.
-    
-    Returns:
-        dict: A dictionary containing:
-            - 'category' (str): One of ['Plumbing', 'Electrical', 'IT', 'General']
-            - 'priority_score' (int): A score from 1-10 indicating urgency
-    
-    Example:
-        >>> result = categorize_complaint("The bathroom sink is leaking")
-        >>> result
-        {'category': 'Plumbing', 'priority_score': 7}
     """
-    system_prompt = """You are a hostel complaint categorization assistant. 
-    Analyze the given complaint and categorize it into one of these categories:
-    - Plumbing: Issues related to bathrooms, sinks, toilets, water leaks, etc.
-    - Electrical: Issues related to lights, power, circuits, appliances, etc.
-    - IT: Issues related to WiFi, internet, computers, software, etc.
-    - General: Any other issues not fitting above categories.
+    system_prompt = """You are a Hostel Triage Manager. 
+    Analyze the given complaint and return a strictly parsable JSON string EXACTLY like this:
+    {"category": "Plumbing", "priority_score": 8}
     
-    Also assign a priority score from 1-10 where:
-    - 1-3: Low priority (cosmetic issues)
-    - 4-6: Medium priority (affects comfort)
-    - 7-10: High priority (safety or critical functionality)
+    The category MUST be one of the following:
+    - Plumbing
+    - Electrical
+    - Cleanliness
+    - Food
+    - IT
+    - General
     
-    Respond ONLY with a valid JSON object in this exact format:
-    {"category": "string", "priority_score": number}"""
+    Assign a priority score from 1-10 (10 being highest danger/urgency).
+    Respond ONLY with the JSON object. Do not include any markdown formatting, backticks, or extra text."""
     
     user_message = f"Complaint to categorize: {text}"
     
@@ -55,10 +42,17 @@ def categorize_complaint(text):
             system=system_prompt,
             messages=[
                 {"role": "user", "content": user_message}
-            ]
+            ],
+            temperature=0.0
         )
         
         response_text = message.content[0].text.strip()
+        # Remove markdown code blocks if the AI accidentally includes them
+        if response_text.startswith("```json"):
+            response_text = response_text[7:-3].strip()
+        elif response_text.startswith("```"):
+            response_text = response_text[3:-3].strip()
+            
         result = json.loads(response_text)
         
         # Validate the response
@@ -66,7 +60,7 @@ def categorize_complaint(text):
             raise ValueError("Invalid response format from AI model")
         
         # Ensure category is valid
-        valid_categories = ['Plumbing', 'Electrical', 'IT', 'General']
+        valid_categories = ['Plumbing', 'Electrical', 'Cleanliness', 'Food', 'IT', 'General']
         if result['category'] not in valid_categories:
             result['category'] = 'General'
         

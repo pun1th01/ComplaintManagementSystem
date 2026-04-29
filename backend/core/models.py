@@ -36,26 +36,13 @@ class Complaint(models.Model):
         ('In Progress', 'In Progress'),
         ('Resolved', 'Resolved'),
     ]
-    
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='complaints')
     category = models.CharField(max_length=100)
     description = models.TextField()
-    
-   
-    priority_score = models.IntegerField(default=1, help_text="1 (Low) to 10 (Critical)")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
-    
+    priority_score = models.IntegerField(default=1, help_text="1 (Low) to 10 (Critical)")
     timestamp = models.DateTimeField(auto_now_add=True)
     image_url = models.URLField(max_length=500, blank=True, null=True)
-
-    
-    status = models.CharField(
-        max_length=20, 
-        choices=STATUS_CHOICES, 
-        default='Pending'
-    )
-
-   
     updated_at = models.DateTimeField(auto_now=True)
 
     def _str_(self):
