@@ -10,22 +10,33 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const fetchComplaints = async () => {
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/complaints/');
+      if (!response.ok) throw new Error('Failed to fetch data');
+      const data = await response.json();
+      setComplaints(data);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // API Call
   useEffect(() => {
-    const fetchComplaints = async () => {
-      try {
-        const response = await fetch('http://127.0.0.1:8000/api/complaints/');
-        if (!response.ok) throw new Error('Failed to fetch data');
-        const data = await response.json();
-        setComplaints(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchComplaints();
   }, []);
+
+  const handleEscalate = async () => {
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/escalate/', { method: 'POST' });
+      if (!response.ok) throw new Error('Failed to run escalation');
+      await fetchComplaints();
+    } catch (err) {
+      alert("Escalation error: " + err.message);
+    }
+  };
 
   // Stats Processing
   const totalActive = complaints.length;
@@ -47,7 +58,16 @@ export default function AdminDashboard() {
   // Automatically sort Triage Table by priority_score (descending)
   const sortedComplaints = [...complaints].sort((a, b) => b.priority_score - a.priority_score);
 
-  if (loading) return <div className="min-h-screen p-8 text-center text-gray-600 font-medium">Gathering Intelligence...</div>;
+  if (loading && complaints.length === 0) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-gray-500 font-medium tracking-wide animate-pulse">Loading Dashboard Data...</p>
+        </div>
+      </div>
+    );
+  }
   if (error) return <div className="min-h-screen p-8 text-center text-red-600 font-medium">Failed to connect: {error}. Check backend status.</div>;
 
   return (
@@ -55,9 +75,18 @@ export default function AdminDashboard() {
       <div className="max-w-7xl mx-auto space-y-8">
         
         {/* Header */}
-        <header>
-          <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Warden Dashboard</h1>
-          <p className="text-gray-500 mt-2 text-sm">Real-time facility triage & AI monitoring.</p>
+        <header className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
+          <div>
+            <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Warden Dashboard</h1>
+            <p className="text-gray-500 mt-2 text-sm">Real-time facility triage & AI monitoring.</p>
+          </div>
+          <button 
+            onClick={handleEscalate}
+            className="flex items-center space-x-2 bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-lg shadow font-semibold transition-colors disabled:opacity-50"
+          >
+            <AlertCircle size={20} />
+            <span>Run SLA Escalation</span>
+          </button>
         </header>
 
         {/* 1. Top Stats Cards */}
@@ -150,7 +179,7 @@ export default function AdminDashboard() {
                       <tr 
                         key={complaint.id} 
                         className={`border-b border-gray-50 last:border-0 hover:bg-gray-50 transition duration-150 ${
-                          isCritical ? 'bg-red-50/60 hover:bg-red-50' : 'bg-white'
+                          isCritical ? 'bg-red-50 text-red-900 border-l-4 border-red-500' : 'bg-white border-l-4 border-transparent'
                         }`}
                       >
                         <td className="py-4 px-6">
@@ -176,8 +205,13 @@ export default function AdminDashboard() {
                   })}
                   {sortedComplaints.length === 0 && (
                     <tr>
-                      <td colSpan="4" className="py-12 text-center text-gray-400 font-medium">
-                        No active complaints to triage.
+                      <td colSpan="4" className="py-16 text-center">
+                        <div className="flex flex-col items-center justify-center space-y-3">
+                          <div className="bg-green-100 p-3 rounded-full">
+                            <CheckCircle size={32} className="text-green-600" />
+                          </div>
+                          <p className="text-gray-600 font-medium text-lg">All Clear! No active hostel issues right now.</p>
+                        </div>
                       </td>
                     </tr>
                   )}
