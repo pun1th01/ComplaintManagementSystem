@@ -1,6 +1,8 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework.views import APIView
+from django.core.management import call_command
 from .models import Room, Student, Complaint
 from .serializers import RoomSerializer, StudentSerializer, ComplaintSerializer
 from .ai_utils import match_roommates, categorize_complaint
@@ -52,3 +54,11 @@ def get_recommended_rooms(request):
     top_matches = matches[:3]
     
     return Response(top_matches, status=status.HTTP_200_OK)
+
+class TriggerEscalationView(APIView):
+    """
+    API View to manually trigger the SLA escalation management command.
+    """
+    def post(self, request, *args, **kwargs):
+        call_command('escalate_complaints')
+        return Response({"status": "success", "message": "SLA Escalation complete."}, status=status.HTTP_200_OK)
