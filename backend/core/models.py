@@ -31,10 +31,16 @@ class Student(models.Model):
         return f"{self.name} - {self.course} (Year {self.year})"
 
 class Complaint(models.Model):
+    STATUS_CHOICES = [
+        ('Pending', 'Pending'),
+        ('In Progress', 'In Progress'),
+        ('Resolved', 'Resolved'),
+    ]
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='complaints')
     category = models.CharField(max_length=100)
     description = models.TextField()
-    priority_score = models.IntegerField(default=1, help_text="1 (Low) to 5 (High)")
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
+    priority_score = models.IntegerField(default=1, help_text="1 (Low) to 10 (High)")
     timestamp = models.DateTimeField(auto_now_add=True)
     image_url = models.URLField(max_length=500, blank=True, null=True)
 
