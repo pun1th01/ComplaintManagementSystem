@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
-import { Sparkles, Image as ImageIcon, CheckCircle, Bell, Search, ShieldAlert, Wrench, Wifi, Coffee, Droplets } from 'lucide-react';
+import { Sparkles, Image as ImageIcon, CheckCircle, Bell, Search, ShieldAlert, Wrench, Wifi, Coffee, Droplets, X } from 'lucide-react';
 
 export default function StudentDashboard() {
   // State for Complaint Form
@@ -10,6 +10,25 @@ export default function StudentDashboard() {
   const [image, setImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // State for Room Booking Modal
+  const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
+  const [selectedRoom, setSelectedRoom] = useState(null);
+  const [roomPreferences, setRoomPreferences] = useState({
+    course: '',
+    year: '',
+    sleep_schedule: '',
+    dietary_preference: '',
+  });
+
+  // Generate 20 dummy rooms for the visual map
+  const dummyRooms = useMemo(() => {
+    return Array.from({ length: 20 }, (_, i) => ({
+      id: i + 1,
+      roomNumber: `A-${100 + i + 1}`,
+      status: Math.random() > 0.4 ? 'available' : 'occupied',
+    }));
+  }, []);
 
   // Dummy Data for Notices
   const notices = [
@@ -95,7 +114,7 @@ export default function StudentDashboard() {
     formData.append('category', category);
     formData.append('student', 1); // Mock student ID
     if (image) {
-      formData.append('image_url', image);
+      formData.append('image', image);
     }
 
     try {
@@ -147,11 +166,14 @@ export default function StudentDashboard() {
             <section>
               <h2 className="text-xl font-bold text-gray-800 mb-4">Quick Actions</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <button className="flex flex-col items-center justify-center p-8 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-3xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group relative overflow-hidden">
+                <button 
+                  onClick={() => setIsRoomModalOpen(true)}
+                  className="flex flex-col items-center justify-center p-8 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-3xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group relative overflow-hidden"
+                >
                   <div className="absolute top-0 right-0 p-4 opacity-20"><Search size={80} /></div>
                   <Search size={40} className="text-white mb-3 group-hover:animate-bounce z-10" />
                   <span className="text-white font-bold text-lg z-10">Find a Room</span>
-                  <span className="text-indigo-100 text-sm mt-1 z-10">Match with roommates</span>
+                  <span className="text-indigo-100 text-sm mt-1 z-10">Book My Room</span>
                 </button>
                 
                 <button 
@@ -341,6 +363,154 @@ export default function StudentDashboard() {
         </section>
 
       </div>
+
+      {/* Room Booking Modal */}
+      {isRoomModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm transition-all duration-300">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto relative animate-in fade-in zoom-in duration-200">
+            <button 
+              onClick={() => setIsRoomModalOpen(false)}
+              className="absolute top-6 right-6 p-2 rounded-full hover:bg-gray-100 text-gray-500 hover:text-gray-800 transition-colors"
+            >
+              <X size={24} />
+            </button>
+            
+            <div className="p-8 md:p-10">
+              <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">Book Your Perfect Room</h2>
+              <p className="text-gray-500 mt-2 mb-8">Enter your preferences and select an available room from the map.</p>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                {/* Left: Preferences Form */}
+                <div className="space-y-5 bg-gray-50 p-6 rounded-2xl border border-gray-100">
+                  <h3 className="text-lg font-bold flex items-center gap-2 mb-4 text-indigo-700">
+                    <Sparkles size={20} /> Match Preferences
+                  </h3>
+                  
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Course</label>
+                    <input 
+                      type="text" 
+                      placeholder="e.g. Computer Science" 
+                      value={roomPreferences.course}
+                      onChange={e => setRoomPreferences({...roomPreferences, course: e.target.value})}
+                      className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Year</label>
+                      <select 
+                        value={roomPreferences.year}
+                        onChange={e => setRoomPreferences({...roomPreferences, year: e.target.value})}
+                        className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                      >
+                        <option value="">Any</option>
+                        <option value="1">1st Year</option>
+                        <option value="2">2nd Year</option>
+                        <option value="3">3rd Year</option>
+                        <option value="4">4th Year</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-gray-700 mb-1">Diet</label>
+                      <select 
+                        value={roomPreferences.dietary_preference}
+                        onChange={e => setRoomPreferences({...roomPreferences, dietary_preference: e.target.value})}
+                        className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                      >
+                        <option value="">Any</option>
+                        <option value="veg">Vegetarian</option>
+                        <option value="non-veg">Non-Vegetarian</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-1">Sleep Schedule</label>
+                    <select 
+                      value={roomPreferences.sleep_schedule}
+                      onChange={e => setRoomPreferences({...roomPreferences, sleep_schedule: e.target.value})}
+                      className="w-full border border-gray-300 rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                    >
+                      <option value="">Any</option>
+                      <option value="early">Early Bird (Sleep early, wake up early)</option>
+                      <option value="late">Night Owl (Sleep late, wake up late)</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Right: Interactive Room Map */}
+                <div className="flex flex-col h-full bg-white border border-gray-100 p-6 rounded-2xl shadow-sm">
+                  <h3 className="text-lg font-bold flex items-center gap-2 mb-6">
+                    <Search size={20} className="text-emerald-500" /> Room Availability Map
+                  </h3>
+                  
+                  {/* Legend */}
+                  <div className="flex flex-wrap gap-4 mb-6 text-xs font-bold text-gray-600">
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-gray-50">
+                      <span className="w-3 h-3 rounded-full bg-emerald-100 border border-emerald-300"></span> Available
+                    </div>
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-gray-50">
+                      <span className="w-3 h-3 rounded-full bg-red-100 border border-red-200"></span> Occupied
+                    </div>
+                    <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-gray-50">
+                      <span className="w-3 h-3 rounded-full bg-indigo-500 shadow-sm border border-indigo-600"></span> Selected
+                    </div>
+                  </div>
+
+                  {/* Seat Grid */}
+                  <div className="grid grid-cols-5 gap-3 flex-grow">
+                    {dummyRooms.map(room => {
+                      const isOccupied = room.status === 'occupied';
+                      const isSelected = selectedRoom === room.roomNumber;
+                      
+                      let btnClass = "relative flex items-center justify-center h-12 w-full rounded-xl border-2 font-bold text-sm transition-all duration-200 ";
+                      if (isOccupied) {
+                        btnClass += "bg-red-50 border-red-100 text-red-400 cursor-not-allowed";
+                      } else if (isSelected) {
+                        btnClass += "bg-indigo-600 border-indigo-700 text-white shadow-md scale-105 ring-2 ring-indigo-200 ring-offset-1";
+                      } else {
+                        btnClass += "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300 hover:scale-105 cursor-pointer";
+                      }
+
+                      return (
+                        <button
+                          key={room.id}
+                          disabled={isOccupied}
+                          onClick={() => setSelectedRoom(room.roomNumber)}
+                          className={btnClass}
+                          title={isOccupied ? "Room is full" : "Click to select"}
+                        >
+                          {room.roomNumber}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Submission Button */}
+                  <button 
+                    disabled={!selectedRoom}
+                    onClick={() => {
+                      toast.success(`Booking request sent for ${selectedRoom}! Waiting for Admin approval.`, {
+                        icon: '🎉'
+                      });
+                      setIsRoomModalOpen(false);
+                      setSelectedRoom(null);
+                    }}
+                    className="w-full mt-8 bg-gray-900 text-white font-bold py-4 rounded-xl hover:bg-indigo-600 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {selectedRoom ? `Confirm & Book ${selectedRoom}` : 'Select a green room to book'} 
+                    {selectedRoom && <CheckCircle size={18} />}
+                  </button>
+
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
