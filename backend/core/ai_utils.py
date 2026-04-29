@@ -1,8 +1,16 @@
 import json
+import os
 from groq import Groq
+from dotenv import load_dotenv
 
-# Initialize Groq client
-client = Groq()
+# Load environment variables from .env file
+load_dotenv()
+
+# Initialize Groq client with a safe fallback
+try:
+    client = Groq(api_key=os.environ.get("GROQ_API_KEY", "dummy_key"))
+except Exception:
+    client = None
 
 
 def categorize_complaint(text):
