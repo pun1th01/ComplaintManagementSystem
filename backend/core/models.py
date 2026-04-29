@@ -40,9 +40,10 @@ class Complaint(models.Model):
     category = models.CharField(max_length=100)
     description = models.TextField()
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
-    priority_score = models.IntegerField(default=1, help_text="1 (Low) to 10 (High)")
+    priority_score = models.IntegerField(default=1, help_text="1 (Low) to 10 (Critical)")
     timestamp = models.DateTimeField(auto_now_add=True)
     image_url = models.URLField(max_length=500, blank=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-    def __str__(self):
-        return f"Complaint: {self.category} by {self.student.name}"
+    def _str_(self):
+        return f"[{self.status}] {self.category} - Priority: {self.priority_score}"
