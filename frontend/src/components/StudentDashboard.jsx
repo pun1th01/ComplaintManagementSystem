@@ -81,6 +81,13 @@ export default function StudentDashboard() {
     e.preventDefault();
     setIsSubmitting(true);
     
+    // Form Validation Check
+    if (!title.trim() || !description.trim() || !category) {
+      toast.error("Please fill out all required fields before submitting.");
+      setIsSubmitting(false);
+      return;
+    }
+
     // Use FormData to support image uploads
     const formData = new FormData();
     formData.append('title', title);

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
-import { AlertCircle, CheckCircle, Activity } from 'lucide-react';
+import { AlertCircle, CheckCircle, Activity, Image as ImageIcon } from 'lucide-react';
 import { format } from 'date-fns';
+import { toast } from 'react-hot-toast';
 
 const COLORS = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6'];
 
@@ -9,6 +10,7 @@ export default function AdminDashboard() {
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isEscalating, setIsEscalating] = useState(false);
 
   const fetchComplaints = async () => {
     try {
@@ -18,6 +20,7 @@ export default function AdminDashboard() {
       setComplaints(data);
     } catch (err) {
       setError(err.message);
+      toast.error('Failed to load complaints: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -29,12 +32,16 @@ export default function AdminDashboard() {
   }, []);
 
   const handleEscalate = async () => {
+    setIsEscalating(true);
     try {
       const response = await fetch('http://127.0.0.1:8000/api/escalate/', { method: 'POST' });
       if (!response.ok) throw new Error('Failed to run escalation');
+      toast.success('Escalation algorithm run successfully.');
       await fetchComplaints();
     } catch (err) {
-      alert("Escalation error: " + err.message);
+      toast.error("Escalation error: " + err.message);
+    } finally {
+      setIsEscalating(false);
     }
   };
 
@@ -46,7 +53,8 @@ export default function AdminDashboard() {
 
   // Donut Chart Processing
   const categoryCounts = complaints.reduce((acc, curr) => {
-    acc[curr.category] = (acc[curr.category] || 0) + 1;
+    const category = curr.category || 'Unknown';
+    acc[category] = (acc[category] || 0) + 1;
     return acc;
   }, {});
 
@@ -82,10 +90,18 @@ export default function AdminDashboard() {
           </div>
           <button 
             onClick={handleEscalate}
-            className="flex items-center space-x-2 bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-lg shadow font-semibold transition-colors disabled:opacity-50"
+            disabled={isEscalating}
+            className="flex items-center space-x-2 bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-lg shadow font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <AlertCircle size={20} />
-            <span>Run SLA Escalation</span>
+            {isEscalating ? (
+              <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            ) : (
+              <AlertCircle size={20} />
+            )}
+            <span>{isEscalating ? 'Escalating...' : 'Run SLA Escalation'}</span>
           </button>
         </header>
 
@@ -169,12 +185,16 @@ export default function AdminDashboard() {
                     <th className="py-4 px-6 font-semibold w-24">Urgency</th>
                     <th className="py-4 px-6 font-semibold">Category</th>
                     <th className="py-4 px-6 font-semibold hidden md:table-cell">Description</th>
+                    <th className="py-4 px-6 font-semibold w-16 text-center">Image</th>
                     <th className="py-4 px-6 font-semibold w-40">Date</th>
                   </tr>
                 </thead>
                 <tbody className="text-sm">
                   {sortedComplaints.map((complaint) => {
                     const isCritical = complaint.priority_score >= 8;
+                    const cat = complaint.category || 'Unknown';
+                    const hasImage = !!complaint.image_url;
+                    
                     return (
                       <tr 
                         key={complaint.id} 
@@ -192,10 +212,19 @@ export default function AdminDashboard() {
                             </span>
                         </td>
                         <td className={`py-4 px-6 font-bold tracking-tight ${isCritical ? 'text-red-900' : 'text-gray-800'}`}>
-                          {complaint.category}
+                          {cat}
                         </td>
                         <td className="py-4 px-6 text-gray-600 font-medium hidden md:table-cell max-w-[200px] truncate" title={complaint.description}>
                           {complaint.description}
+                        </td>
+                        <td className="py-4 px-6 text-center">
+                          {hasImage ? (
+                            <a href={complaint.image_url} target="_blank" rel="noreferrer" className="inline-block p-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors">
+                              <ImageIcon size={16} />
+                            </a>
+                          ) : (
+                            <span className="text-gray-300">-</span>
+                          )}
                         </td>
                         <td className="py-4 px-6 text-gray-400 font-medium text-xs whitespace-nowrap">
                           {complaint.timestamp ? format(new Date(complaint.timestamp), "MMM d, h:mm a") : 'Unknown Date'}
