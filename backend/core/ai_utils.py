@@ -23,7 +23,7 @@ def categorize_complaint(text, image_bytes=None, mime_type="image/jpeg"):
     """
     system_prompt = """You are a Hostel Triage Manager. 
     Analyze the given complaint (and image if provided) and return a strictly parsable JSON string EXACTLY like this:
-    {"category": "Plumbing", "priority_score": 8}
+    {"category": "Plumbing", "priority_score": 8, "summary": "1-sentence description of the visual evidence or issue"}
     
     The category MUST be one of the following:
     - Plumbing
@@ -49,21 +49,29 @@ def categorize_complaint(text, image_bytes=None, mime_type="image/jpeg"):
             },
         ]
     else:
-        model_name = "llama-3.1-70b-versatile"
+        model_name = "llama-3.3-70b-versatile"
         user_message_content = f"Complaint to categorize: {text}"
     
     try:
-        message = client.messages.create(
+        if image_bytes:
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message_content}
+            ]
+        else:
+            messages = [
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_message_content}
+            ]
+
+        message = client.chat.completions.create(
             model=model_name,
             max_tokens=100,
-            system=system_prompt,
-            messages=[
-                {"role": "user", "content": user_message_content}
-            ],
+            messages=messages,
             temperature=0.0
         )
         
-        response_text = message.content[0].text.strip()
+        response_text = message.choices[0].message.content.strip()
         
         # Robust fallback extraction for strict JSON enforcing
         # If the LLM wraps the response in markdown, or adds chatter, find the first '{' and last '}'
@@ -91,13 +99,17 @@ def categorize_complaint(text, image_bytes=None, mime_type="image/jpeg"):
         # Fallback if response is not valid JSON
         return {
             'category': 'General',
-            'priority_score': 5
+            'priority_score': 5,
+            'summary': 'Could not parse summary.'
         }
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         # Handle other errors gracefully
         return {
             'category': 'General',
-            'priority_score': 5
+            'priority_score': 5,
+            'summary': 'Error parsing details.'
         }
 
 
