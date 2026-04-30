@@ -185,6 +185,7 @@ def get_recommended_rooms(request):
         
         room_data = RoomSerializer(room).data
         room_data['compatibility_score'] = avg_score
+        room_data['current_occupants'] = roommate_data if roommates.exists() else []
         room_recommendations.append(room_data)
 
     # Sort rooms by compatibility score

@@ -24,6 +24,8 @@ export default function StudentDashboard() {
   
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
+  const [selectedRoomDetails, setSelectedRoomDetails] = useState(null);
+
   // Grab logged in user
   const storedUser = JSON.parse(localStorage.getItem('user')) || {};
   const studentName = storedUser?.user?.name || "Student";
@@ -105,8 +107,14 @@ export default function StudentDashboard() {
           roomNumber: `Room ${room.room_number}`,
           matchScore: Math.round(room.compatibility_score * 5 + 40),
           tags: [room.is_balcony_room ? 'Balcony' : 'No Balcony', `${room.beds.filter(b => !b.student_occupant).length} Beds Left`],
-          beds: room.beds
+          beds: room.beds,
+          occupants: room.current_occupants || []
         })));
+        setIsRoomModalOpen(false);
+        toast.success("AI Matching Complete! Scroll down to see your Recommended Rooms.", { icon: '🤖' });
+        setTimeout(() => {
+          document.getElementById('recommended-rooms-section').scrollIntoView({ behavior: 'smooth' });
+        }, 300);
       } else {
         setRecommendedRooms([]);
       }
@@ -368,7 +376,7 @@ export default function StudentDashboard() {
             </section>
 
             {/* Recommended Rooms */}
-            <section>
+            <section id="recommended-rooms-section" className="scroll-mt-24">
               <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center">
                 Recommended Rooms
                 <span className="ml-3 text-sm bg-indigo-100 text-indigo-700 py-1 px-3 rounded-full font-bold flex items-center gap-1">
@@ -384,8 +392,16 @@ export default function StudentDashboard() {
                       <div className="bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-100">
                         <h3 className="text-2xl font-black text-gray-800 tracking-tight">{room.roomNumber}</h3>
                       </div>
-                      <div className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold text-xs px-3 py-1.5 rounded-full flex items-center shadow-sm">
-                        <Activity size={12} className="mr-1" /> {room.matchScore}% Match
+                      <div className="flex flex-col items-end gap-2">
+                        <div className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold text-xs px-3 py-1.5 rounded-full flex items-center shadow-sm">
+                          <Activity size={12} className="mr-1" /> {room.matchScore}% Match
+                        </div>
+                        <button 
+                          onClick={() => setSelectedRoomDetails(room)}
+                          className="text-[10px] font-bold px-2 py-1 bg-indigo-50 text-indigo-700 rounded-md hover:bg-indigo-100 transition-colors border border-indigo-100"
+                        >
+                          View Details
+                        </button>
                       </div>
                     </div>
                     
@@ -871,6 +887,82 @@ export default function StudentDashboard() {
           onSuccess={handlePaymentSuccess}
           amount={5000} 
         />
+      )}
+
+      {/* Compatibility Details Modal */}
+      {selectedRoomDetails && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm transition-all duration-300">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden relative animate-in fade-in zoom-in duration-200">
+            <div className="bg-indigo-600 p-6 text-white flex justify-between items-center">
+              <div>
+                <h2 className="text-2xl font-extrabold tracking-tight flex items-center gap-2">
+                  <Sparkles size={24} className="text-indigo-200" /> {selectedRoomDetails.roomNumber} Analysis
+                </h2>
+                <p className="text-indigo-100 text-sm mt-1 font-medium">AI Match Breakdown</p>
+              </div>
+              <button 
+                onClick={() => setSelectedRoomDetails(null)}
+                className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            <div className="p-8">
+              <div className="flex items-center gap-6 mb-8 bg-gray-50 p-6 rounded-2xl border border-gray-100">
+                <div className="w-24 h-24 rounded-full bg-emerald-100 flex items-center justify-center border-4 border-white shadow-md shrink-0">
+                  <span className="text-3xl font-black text-emerald-600">{selectedRoomDetails.matchScore}%</span>
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-gray-800">Overall Compatibility Score</h3>
+                  <p className="text-sm text-gray-500 mt-1">Based on Course, Year, Diet, and Sleep Schedule mapping with current occupants.</p>
+                </div>
+              </div>
+              
+              <h3 className="text-sm font-black uppercase tracking-wider text-gray-400 mb-4 border-b border-gray-100 pb-2">Current Occupants ({selectedRoomDetails.occupants.length}/4)</h3>
+              
+              {selectedRoomDetails.occupants.length > 0 ? (
+                <div className="space-y-3">
+                  {selectedRoomDetails.occupants.map((occ, idx) => (
+                    <div key={idx} className="bg-white border border-gray-100 p-4 rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-sm hover:border-indigo-200 transition-colors">
+                      <div>
+                        <p className="font-bold text-gray-800 flex items-center gap-2">
+                          <span className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center text-xs">{idx + 1}</span>
+                          {occ.name}
+                        </p>
+                        <p className="text-xs text-gray-500 mt-1 ml-8">{occ.course} • Year {occ.year}</p>
+                      </div>
+                      
+                      <div className="flex flex-wrap gap-2 sm:ml-0 ml-8">
+                        <span className={`text-[10px] font-bold px-2 py-1 rounded border ${occ.sleep_schedule === roomPreferences.sleep_schedule && roomPreferences.sleep_schedule !== '' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-50 text-gray-500 border-gray-200'}`}>
+                          {occ.sleep_schedule === 'early' ? 'Early Bird' : occ.sleep_schedule === 'late' ? 'Night Owl' : 'Flexible Sleep'}
+                        </span>
+                        <span className={`text-[10px] font-bold px-2 py-1 rounded border ${occ.dietary_preference === roomPreferences.dietary_preference && roomPreferences.dietary_preference !== '' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-gray-50 text-gray-500 border-gray-200'}`}>
+                          {occ.dietary_preference === 'veg' ? 'Vegetarian' : 'Non-Veg'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-gray-50 border border-dashed border-gray-200 p-8 rounded-2xl text-center">
+                  <Sparkles className="mx-auto text-indigo-300 mb-2" size={32} />
+                  <p className="text-gray-800 font-bold">This room is completely empty!</p>
+                  <p className="text-sm text-gray-500 mt-1">You will be the first occupant and set the vibe for future matches.</p>
+                </div>
+              )}
+            </div>
+            
+            <div className="p-6 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+              <button 
+                onClick={() => setSelectedRoomDetails(null)}
+                className="px-6 py-2.5 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
