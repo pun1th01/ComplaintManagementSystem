@@ -73,9 +73,10 @@ def categorize_complaint(text, image_bytes=None, mime_type="image/jpeg"):
         
         response_text = message.choices[0].message.content.strip()
         
-        # Robust fallback extraction for strict JSON enforcing
-        # Strip out any markdown formatting (like ```json ... ```)
-        response_text = re.sub(r'^```(?:json)?|```$', '', response_text.strip(), flags=re.MULTILINE).strip()
+        # Extremely robust fallback extraction for strict JSON enforcing
+        # Remove any markdown code blocks completely first
+        response_text = re.sub(r'```[a-zA-Z]*\n', '', response_text)
+        response_text = re.sub(r'```', '', response_text)
         
         # If the LLM adds chatter, find the first '{' and last '}'
         match = re.search(r'\{.*\}', response_text, re.DOTALL)
@@ -94,11 +95,15 @@ def categorize_complaint(text, image_bytes=None, mime_type="image/jpeg"):
             result['category'] = 'General'
         
         # Ensure priority_score is in valid range
-        result['priority_score'] = max(1, min(10, int(result['priority_score'])))
-        
+        try:
+            result['priority_score'] = max(1, min(10, int(result['priority_score'])))
+        except (ValueError, TypeError):
+            result['priority_score'] = 5
+            
         return result
     
-    except json.JSONDecodeError:
+    except json.JSONDecodeError as e:
+        print(f"JSON Decode Error: {e}. Raw response was: {response_text}")
         # Fallback if response is not valid JSON
         return {
             'category': 'General',
@@ -108,6 +113,7 @@ def categorize_complaint(text, image_bytes=None, mime_type="image/jpeg"):
     except Exception as e:
         import traceback
         traceback.print_exc()
+        print(f"General Error in AI extraction: {e}")
         # Handle other errors gracefully
         return {
             'category': 'General',
