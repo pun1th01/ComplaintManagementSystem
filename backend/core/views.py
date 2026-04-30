@@ -85,6 +85,7 @@ class RoomViewSet(viewsets.ModelViewSet):
         # Update relationships
         student.bed = bed
         student.room = room
+        student.payment_status = 'Completed' # Set payment status to completed upon booking
         student.save()
 
         # Update room occupancy based on filled beds (exactly 4 beds)
@@ -102,6 +103,16 @@ class RoomViewSet(viewsets.ModelViewSet):
 class StudentViewSet(viewsets.ModelViewSet):
     queryset = Student.objects.all()
     serializer_class = StudentSerializer
+
+    @action(detail=True, methods=['patch'])
+    def update_payment_status(self, request, pk=None):
+        student = self.get_object()
+        payment_status = request.data.get('payment_status')
+        if payment_status in dict(Student.PAYMENT_CHOICES).keys():
+            student.payment_status = payment_status
+            student.save()
+            return Response({'status': 'success', 'message': f'Payment status updated to {payment_status}'})
+        return Response({'error': 'Invalid payment status'}, status=status.HTTP_400_BAD_REQUEST)
 
 class ComplaintViewSet(viewsets.ModelViewSet):
     queryset = Complaint.objects.all()

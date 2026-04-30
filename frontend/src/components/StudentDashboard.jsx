@@ -61,13 +61,24 @@ export default function StudentDashboard() {
       .catch(err => console.error(err));
   };
 
+  const [studentDetails, setStudentDetails] = useState(null);
+
+  const fetchStudentDetails = () => {
+    fetch(`http://127.0.0.1:8000/api/students/${studentId}/`)
+      .then(res => res.json())
+      .then(data => setStudentDetails(data))
+      .catch(err => console.error(err));
+  };
+
   useEffect(() => {
     fetchRooms();
     fetchMyComplaints();
+    fetchStudentDetails();
     
     // Poll for updates on complaints every 10 seconds
     const interval = setInterval(() => {
       fetchMyComplaints();
+      fetchStudentDetails();
     }, 10000);
     return () => clearInterval(interval);
   }, [studentId]);
@@ -120,10 +131,8 @@ export default function StudentDashboard() {
   };
 
   useEffect(() => {
-    if (isRoomModalOpen) {
-      handleFetchRecommendations();
-    }
-  }, [roomPreferences, isRoomModalOpen]);
+    handleFetchRecommendations();
+  }, [roomPreferences]);
 
   const handlePaymentSuccess = () => {
     if (!selectedRoom || !selectedBed) return;
@@ -146,6 +155,7 @@ export default function StudentDashboard() {
         setIsPaymentModalOpen(false);
         setIsRoomModalOpen(false);
         fetchRooms();
+        handleFetchRecommendations();
       }
     })
     .catch(err => {
@@ -156,25 +166,9 @@ export default function StudentDashboard() {
   };
 
   const handleBookSpecificBed = (room_id, bed_id) => {
-    fetch(`http://127.0.0.1:8000/api/rooms/${room_id}/book_bed/`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        student_id: studentId,
-        bed_id: bed_id
-      })
-    })
-    .then(res => res.json())
-    .then(data => {
-      if (data.error) {
-        toast.error(data.error, { icon: '🛑' });
-      } else {
-        toast.success(`SUCCESS: Bed secured.`, { icon: '✅' });
-        fetchRooms();
-        handleFetchRecommendations();
-      }
-    })
-    .catch(err => console.error(err));
+    setSelectedRoom(room_id);
+    setSelectedBed(bed_id);
+    setIsPaymentModalOpen(true);
   };
 
   const notices = [
@@ -297,6 +291,15 @@ export default function StudentDashboard() {
             </h1>
             <p className="text-gray-500 mt-1 text-sm font-medium flex items-center gap-2">
               <Activity size={14} className="text-indigo-500 animate-pulse" /> Student Portal Active
+              {studentDetails && studentDetails.payment_status && (
+                <span className={`ml-4 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                  studentDetails.payment_status === 'Completed' ? 'bg-green-100 text-green-700' :
+                  studentDetails.payment_status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
+                  'bg-red-100 text-red-700'
+                }`}>
+                  Payment: {studentDetails.payment_status}
+                </span>
+              )}
             </p>
           </div>
           

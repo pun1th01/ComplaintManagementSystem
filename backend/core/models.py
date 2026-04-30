@@ -44,6 +44,11 @@ class Student(models.Model):
         ('non_veg', 'Non-Veg'),
         ('vegan', 'Vegan'),
     ]
+    PAYMENT_CHOICES = [
+        ('Completed', 'Completed'),
+        ('Pending', 'Pending'),
+        ('Not Paid', 'Not Paid'),
+    ]
     name = models.CharField(max_length=100, unique=True)
     course = models.CharField(max_length=100)
     year = models.PositiveIntegerField()
@@ -52,6 +57,7 @@ class Student(models.Model):
     bed = models.OneToOneField(Bed, on_delete=models.SET_NULL, null=True, blank=True, related_name='student_occupant')
     dietary_preference = models.CharField(max_length=20, choices=DIETARY_CHOICES, default='veg')
     balcony_preference = models.BooleanField(default=False)
+    payment_status = models.CharField(max_length=20, choices=PAYMENT_CHOICES, default='Not Paid')
 
     def __str__(self):
         return f"{self.name} - {self.course} (Year {self.year})"
