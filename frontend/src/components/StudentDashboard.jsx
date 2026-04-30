@@ -15,6 +15,7 @@ export default function StudentDashboard() {
   const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
+  const [selectedBed, setSelectedBed] = useState(null); // Track specific bed ID
   const [roomPreferences, setRoomPreferences] = useState({ course: '', year: '', dietary_preference: '', sleep_schedule: '' });
   
   const [rooms, setRooms] = useState([]);
@@ -110,11 +111,8 @@ export default function StudentDashboard() {
           beds: room.beds,
           occupants: room.current_occupants || []
         })));
-        setIsRoomModalOpen(false);
-        toast.success("AI Matching Complete! Scroll down to see your Recommended Rooms.", { icon: '🤖' });
-        setTimeout(() => {
-          document.getElementById('recommended-rooms-section').scrollIntoView({ behavior: 'smooth' });
-        }, 300);
+        // DO NOT close the modal. Let the right panel update.
+        toast.success("AI Matching Complete! See your Recommended Rooms on the right.", { icon: '🤖' });
       } else {
         setRecommendedRooms([]);
       }
@@ -124,22 +122,14 @@ export default function StudentDashboard() {
   };
 
   const handlePaymentSuccess = () => {
-    const roomObj = rooms.find(r => r.room_number === selectedRoom);
-    if (!roomObj) return;
+    if (!selectedRoom || !selectedBed) return;
 
-    const availableBed = roomObj.beds?.find(b => !b.student_occupant);
-    if (!availableBed) {
-      toast.error("SYSTEM ERROR: No vacant beds detected.", { icon: '🛑' });
-      setIsPaymentModalOpen(false);
-      return;
-    }
-
-    fetch(`http://127.0.0.1:8000/api/rooms/${roomObj.id}/book_bed/`, {
+    fetch(`http://127.0.0.1:8000/api/rooms/${selectedRoom}/book_bed/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         student_id: studentId,
-        bed_id: availableBed.id
+        bed_id: selectedBed
       })
     })
     .then(res => res.json())
@@ -148,7 +138,7 @@ export default function StudentDashboard() {
         toast.error(data.error, { icon: '🛑' });
         setIsPaymentModalOpen(false);
       } else {
-        toast.success(`SUCCESS: Room ${roomObj.room_number} booked.`, { icon: '✅' });
+        toast.success(`SUCCESS: Bed secured.`, { icon: '✅' });
         setIsPaymentModalOpen(false);
         setIsRoomModalOpen(false);
         fetchRooms();
@@ -751,11 +741,14 @@ export default function StudentDashboard() {
                                 <button
                                   key={bed.id}
                                   disabled={!!bed.student_occupant}
-                                  onClick={() => setSelectedRoom(room.room_number)}
+                                  onClick={() => {
+                                    setSelectedRoom(room.id);
+                                    setSelectedBed(bed.id);
+                                  }}
                                   className={`p-2 rounded-lg border text-xs font-bold transition-all ${
                                     bed.student_occupant 
                                       ? 'bg-red-50 border-red-100 text-red-400 cursor-not-allowed' 
-                                      : selectedRoom === room.room_number 
+                                      : selectedBed === bed.id 
                                         ? 'bg-indigo-600 border-indigo-700 text-white ring-2 ring-indigo-200' 
                                         : 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
                                   }`}
@@ -777,12 +770,12 @@ export default function StudentDashboard() {
                       
                       {/* Submission Button */}
                       <button 
-                        disabled={!selectedRoom}
+                        disabled={!selectedBed}
                         onClick={() => setIsPaymentModalOpen(true)}
                         className="w-full mt-6 bg-gray-900 text-white font-bold py-4 rounded-xl hover:bg-indigo-600 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                       >
-                        {selectedRoom ? `Confirm & Book ${selectedRoom}` : 'Select an available bed'} 
-                        {selectedRoom && <CheckCircle size={18} />}
+                        {selectedBed ? `Confirm & Book Selected Bed` : 'Select an available bed'} 
+                        {selectedBed && <CheckCircle size={18} />}
                       </button>
                     </>
                   ) : (
@@ -808,13 +801,13 @@ export default function StudentDashboard() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-grow content-start">
                         {dummyRooms.map(room => {
                           const isOccupied = room.occupancy_status === 'occupied';
-                          const isSelected = selectedRoom === room.room_number;
+                          const isRoomSelected = selectedRoom === room.id;
                           
                           return (
                             <div 
                               key={room.id}
                               className={`border-2 rounded-xl p-4 transition-all duration-200 ${
-                                isSelected 
+                                isRoomSelected 
                                   ? 'border-indigo-500 bg-indigo-50/50 shadow-md' 
                                   : isOccupied 
                                     ? 'border-red-100 bg-red-50/30' 
@@ -829,19 +822,23 @@ export default function StudentDashboard() {
                               <div className="grid grid-cols-2 gap-2">
                                 {room.beds && room.beds.map((bed) => {
                                   const bedOccupied = !!bed.student_occupant;
+                                  const isBedSelected = selectedBed === bed.id;
                                   return (
                                     <button
                                       key={bed.id}
                                       disabled={bedOccupied}
-                                      onClick={() => setSelectedRoom(room.room_number)}
+                                      onClick={() => {
+                                        setSelectedRoom(room.id);
+                                        setSelectedBed(bed.id);
+                                      }}
                                       className={`p-2 rounded-lg border text-[10px] font-bold transition-all flex flex-col items-center justify-center ${
                                         bedOccupied 
                                           ? 'bg-red-50 border-red-200 text-red-500 cursor-not-allowed' 
-                                          : isSelected 
-                                            ? 'bg-indigo-600 border-indigo-700 text-white shadow-inner' 
-                                            : 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 hover:scale-105'
+                                          : isBedSelected 
+                                            ? 'bg-indigo-600 border-indigo-700 text-white shadow-inner scale-105' 
+                                            : 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
                                       }`}
-                                      title={bedOccupied ? "Bed occupied" : "Click to select room"}
+                                      title={bedOccupied ? "Bed occupied" : "Click to select this bed"}
                                     >
                                       <span>Bed {bed.bed_number}</span>
                                       <span className="opacity-80 mt-0.5 font-semibold text-[8px] uppercase">{bed.deck}</span>
@@ -862,12 +859,12 @@ export default function StudentDashboard() {
 
                       {/* Submission Button */}
                       <button 
-                        disabled={!selectedRoom}
+                        disabled={!selectedBed}
                         onClick={() => setIsPaymentModalOpen(true)}
                         className="w-full mt-8 bg-gray-900 text-white font-bold py-4 rounded-xl hover:bg-indigo-600 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                       >
-                        {selectedRoom ? `Confirm & Book ${selectedRoom}` : 'Select a green room'} 
-                        {selectedRoom && <CheckCircle size={18} />}
+                        {selectedBed ? `Confirm & Book Selected Bed` : 'Select a green bed'} 
+                        {selectedBed && <CheckCircle size={18} />}
                       </button>
                     </>
                   )}
