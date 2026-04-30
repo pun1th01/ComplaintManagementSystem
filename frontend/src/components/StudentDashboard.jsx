@@ -257,6 +257,26 @@ export default function StudentDashboard() {
     }
   };
 
+  const handleCloseTicket = (complaintId) => {
+    fetch(`http://127.0.0.1:8000/api/complaints/${complaintId}/`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'Resolved' })
+    })
+    .then(res => {
+      if (res.ok) {
+        toast.success("SUCCESS: Ticket closed successfully.", { icon: '✅' });
+        fetchMyComplaints();
+      } else {
+        toast.error("FAILED: Could not close ticket.", { icon: '🛑' });
+      }
+    })
+    .catch(err => {
+      console.error(err);
+      toast.error("NETWORK ERROR: Server unreachable.", { icon: '🛑' });
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800 p-6 md:p-10 font-sans relative overflow-hidden">
       {/* Background Elements */}
@@ -445,10 +465,18 @@ export default function StudentDashboard() {
                         )}
                       </div>
                     </div>
-                    <div className="text-right shrink-0">
-                      <p className="text-xs text-gray-400 font-medium">
+                    <div className="text-right shrink-0 flex flex-col justify-between items-end">
+                      <p className="text-xs text-gray-400 font-medium mb-3">
                         {complaint.timestamp ? new Date(complaint.timestamp).toLocaleDateString() : ''}
                       </p>
+                      {complaint.status !== 'Resolved' && (
+                        <button
+                          onClick={() => handleCloseTicket(complaint.id)}
+                          className="text-[10px] font-bold px-3 py-1.5 bg-gray-900 text-white rounded-lg hover:bg-green-600 transition-colors shadow-sm flex items-center gap-1"
+                        >
+                          <CheckCircle size={12} /> Close Ticket
+                        </button>
+                      )}
                     </div>
                   </div>
                 )}) : (
