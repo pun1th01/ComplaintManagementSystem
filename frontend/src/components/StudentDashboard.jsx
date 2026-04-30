@@ -716,6 +716,7 @@ export default function StudentDashboard() {
                   </div>
 
                   <button 
+                    type="button"
                     onClick={handleFetchRecommendations}
                     disabled={isLoadingRooms}
                     className="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl hover:bg-indigo-700 hover:shadow-lg transition-all flex items-center justify-center gap-2 mt-4"
