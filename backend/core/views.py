@@ -69,31 +69,29 @@ class RoomViewSet(viewsets.ModelViewSet):
         room = self.get_object()
         student_id = request.data.get('student_id')
         bed_id = request.data.get('bed_id')
+        if not student_id or not bed_id:
+            return Response({'error': 'student_id and bed_id are required'}, status=400)
+
         try:
             student = Student.objects.get(id=student_id)
             bed = Bed.objects.get(id=bed_id, room=room)
         except (Student.DoesNotExist, Bed.DoesNotExist):
             return Response({'error': 'Invalid Student or Bed'}, status=400)
 
-        if bed.student_occupant:
+        # Check if bed is already occupied by another student
+        if hasattr(bed, 'student_occupant') and bed.student_occupant and bed.student_occupant != student:
             return Response({'error': 'Bed is already occupied'}, status=400)
 
-        # Remove student from previous bed if they had one
-        if student.bed:
-            student.bed.student_occupant = None
-            student.bed.save()
-
         # Update relationships
-        bed.student_occupant = student
-        bed.save()
         student.bed = bed
         student.room = room
         student.save()
 
-        # Update room occupancy based on filled beds
-        total_beds = room.beds.count()
+        # Update room occupancy based on filled beds (exactly 4 beds)
+        total_beds = 4
         occupied_beds = room.beds.filter(student_occupant__isnull=False).count()
-        if occupied_beds == total_beds:
+        
+        if occupied_beds >= total_beds:
             room.occupancy_status = 'occupied'
         else:
             room.occupancy_status = 'vacant'
@@ -161,19 +159,39 @@ def get_recommended_rooms(request):
     """
     target_student_dict = request.data
     
-    # We evaluate available students (students currently in rooms) to match preferences
-    # and map the recommendation back to their rooms.
-    available_students = Student.objects.filter(room__isnull=False)
-    serializer = StudentSerializer(available_students, many=True)
-    available_students_list = serializer.data
+    # Get all rooms that have at least one vacant bed
+    rooms = Room.objects.all()
+    room_recommendations = []
+
+    for room in rooms:
+        # Check if room has at least one vacant bed
+        vacant_beds = room.beds.filter(student_occupant__isnull=True).exists()
+        if not vacant_beds:
+            continue
+
+        # Calculate compatibility with students already in the room
+        roommates = room.students.all()
+        if roommates.exists():
+            roommate_data = StudentSerializer(roommates, many=True).data
+            # match_roommates returns a list of students with compatibility_score
+            matches = match_roommates(target_student_dict, roommate_data)
+            # Average compatibility score for the room
+            avg_score = sum(m['compatibility_score'] for m in matches) / len(matches)
+        else:
+            # Empty room gets a base score (e.g., matching balcony preference)
+            avg_score = 0
+            if target_student_dict.get('balcony_preference') == room.is_balcony_room:
+                avg_score += 2
+        
+        room_data = RoomSerializer(room).data
+        room_data['compatibility_score'] = avg_score
+        room_recommendations.append(room_data)
+
+    # Sort rooms by compatibility score
+    room_recommendations.sort(key=lambda x: x['compatibility_score'], reverse=True)
     
-    # Run the matching algorithm
-    matches = match_roommates(target_student_dict, available_students_list)
-    
-    # Get top 3 matches
-    top_matches = matches[:3]
-    
-    return Response(top_matches, status=status.HTTP_200_OK)
+    # Return top 3
+    return Response(room_recommendations[:3], status=status.HTTP_200_OK)
 
 class TriggerEscalationView(APIView):
     """

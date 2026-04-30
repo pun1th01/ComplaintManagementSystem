@@ -14,6 +14,18 @@ class Room(models.Model):
     def __str__(self):
         return f"Room {self.room_number}"
 
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+        if is_new:
+            # Create 4 beds for every new room
+            for i in range(1, 5):
+                Bed.objects.create(
+                    room=self,
+                    bed_number=str(i),
+                    deck='Lower' if i % 2 != 0 else 'Upper'
+                )
+
 class Bed(models.Model):
     DECK_CHOICES = [
         ('Lower', 'Lower Deck'),

@@ -29,6 +29,13 @@ export default function AdminDashboard() {
   // API Call
   useEffect(() => {
     fetchComplaints();
+    
+    // Task 3: Polling for live updates (every 5 seconds)
+    const interval = setInterval(() => {
+      fetchComplaints();
+    }, 5000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const handleEscalate = async () => {
@@ -185,7 +192,9 @@ export default function AdminDashboard() {
                     <th className="py-4 px-6 font-semibold w-24">Urgency</th>
                     <th className="py-4 px-6 font-semibold">Category</th>
                     <th className="py-4 px-6 font-semibold hidden md:table-cell">Description</th>
-                    <th className="py-4 px-6 font-semibold w-16 text-center">Image</th>
+                      <th className="py-4 px-6 font-semibold">AI Summary</th>
+                      <th className="py-4 px-6 font-semibold w-16 text-center">Image</th>
+                      <th className="py-4 px-6 font-semibold">Assign Staff</th>
                     <th className="py-4 px-6 font-semibold w-40">Date</th>
                   </tr>
                 </thead>
@@ -217,16 +226,49 @@ export default function AdminDashboard() {
                         <td className="py-4 px-6 text-gray-600 font-medium hidden md:table-cell max-w-[200px] truncate" title={complaint.description}>
                           {complaint.description}
                         </td>
-                        <td className="py-4 px-6 text-center">
-                          {hasImage ? (
-                            <a href={complaint.image_url} target="_blank" rel="noreferrer" className="inline-block p-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors">
-                              <ImageIcon size={16} />
-                            </a>
-                          ) : (
-                            <span className="text-gray-300">-</span>
-                          )}
-                        </td>
-                        <td className="py-4 px-6 text-gray-400 font-medium text-xs whitespace-nowrap">
+                                                  <td className="py-4 px-6">
+                            <span className="italic text-slate-500 font-medium text-xs">
+                              {complaint.ai_summary || '-'}
+                            </span>
+                          </td>
+                          <td className="py-4 px-6 text-center">
+                            {hasImage ? (
+                              <a href={complaint.image_url} target="_blank" rel="noreferrer" className="inline-block p-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors">
+                                <ImageIcon size={16} />
+                              </a>
+                            ) : (
+                              <span className="text-gray-300">-</span>
+                            )}
+                          </td>
+                          <td className="py-4 px-6">
+                            <select 
+                              value={complaint.assigned_staff || 'Unassigned'}
+                              onChange={async (e) => {
+                                const staff = e.target.value;
+                                try {
+                                    const res = await fetch(`http://127.0.0.1:8000/api/complaints/${complaint.id}/assign_staff/`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ staff_name: staff })
+                                  });
+                                  if (res.ok) {
+                                    toast.success(`Assigned to ${staff}`);
+                                    fetchComplaints();
+                                  }
+                                } catch(err) {
+                                  toast.error('Assignment failed');
+                                }
+                              }}
+                              className="text-xs font-bold bg-white border border-gray-200 rounded-md p-1.5 focus:ring-1 focus:ring-indigo-500 shadow-sm"
+                            >
+                              <option value="Unassigned">Unassigned</option>
+                              <option value="Electrician">Electrician</option>
+                              <option value="Plumber">Plumber</option>
+                              <option value="Janitor">Janitor</option>
+                              <option value="IT Support">IT Support</option>
+                            </select>
+                          </td>
+                          <td className="py-4 px-6 text-gray-400 font-medium text-xs whitespace-nowrap">
                           {complaint.timestamp ? format(new Date(complaint.timestamp), "MMM d, h:mm a") : 'Unknown Date'}
                         </td>
                       </tr>
@@ -254,3 +296,4 @@ export default function AdminDashboard() {
     </div>
   );
 }
+

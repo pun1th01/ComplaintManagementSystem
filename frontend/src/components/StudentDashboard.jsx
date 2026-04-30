@@ -1,9 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import { Sparkles, Image as ImageIcon, CheckCircle, Bell, Search, ShieldAlert, Wrench, Wifi, Coffee, Droplets, X } from 'lucide-react';
+import { Sparkles, Image as ImageIcon, CheckCircle, Bell, Search, ShieldAlert, Wrench, Wifi, Coffee, Droplets, X, CreditCard } from 'lucide-react';
+
+import PaymentModal from './PaymentModal';
 
 export default function StudentDashboard() {
-  // State for Complaint Form
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
@@ -11,26 +12,131 @@ export default function StudentDashboard() {
   const [imagePreview, setImagePreview] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // State for Room Booking Modal
   const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
-  const [roomPreferences, setRoomPreferences] = useState({
-    course: '',
-    year: '',
-    sleep_schedule: '',
-    dietary_preference: '',
-  });
+  const [roomPreferences, setRoomPreferences] = useState({ course: '', year: '', dietary_preference: '', sleep_schedule: '' });
+  
+  const [rooms, setRooms] = useState([]);
+  const [recommendedRooms, setRecommendedRooms] = useState([]);
+  const [isLoadingRooms, setIsLoadingRooms] = useState(false);
+  const [myComplaints, setMyComplaints] = useState([]);
 
-  // Generate 20 dummy rooms for the visual map
-  const dummyRooms = useMemo(() => {
-    return Array.from({ length: 20 }, (_, i) => ({
-      id: i + 1,
-      roomNumber: `A-${100 + i + 1}`,
-      status: Math.random() > 0.4 ? 'available' : 'occupied',
-    }));
-  }, []);
+  // Grab logged in user
+  const storedUser = JSON.parse(localStorage.getItem('user')) || {};
+  const studentName = storedUser?.user?.name || "Student";
+  const studentId = storedUser?.user?.id || 1;
 
-  // Dummy Data for Notices
+  const fetchRooms = () => {
+    fetch('http://127.0.0.1:8000/api/rooms/')
+      .then(res => res.json())
+      .then(data => setRooms(data))
+      .catch(err => console.error(err));
+  };
+
+  const fetchMyComplaints = () => {
+    fetch('http://127.0.0.1:8000/api/complaints/')
+      .then(res => res.json())
+      .then(data => {
+        // Filter complaints for this student
+        const filtered = data.filter(c => c.student === studentId);
+        setMyComplaints(filtered);
+      })
+      .catch(err => console.error(err));
+  };
+
+  useEffect(() => {
+    fetchRooms();
+    fetchMyComplaints();
+  }, [studentId]);
+
+  const handleFetchRecommendations = () => {
+    setIsLoadingRooms(true);
+    fetch('http://127.0.0.1:8000/api/get_recommended_rooms/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        course: roomPreferences.course,
+        year: parseInt(roomPreferences.year),
+        dietary_preference: roomPreferences.dietary_preference,
+        sleep_schedule: roomPreferences.sleep_schedule,
+        balcony_preference: storedUser?.user?.balcony_preference || false
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      setRecommendedRooms(data.map(room => ({
+        id: room.id,
+        roomNumber: `Room ${room.room_number}`,
+        matchScore: Math.round(room.compatibility_score * 5 + 40),
+        tags: [room.is_balcony_room ? 'Balcony' : 'No Balcony', `${room.beds.filter(b => !b.student_occupant).length} Beds Left`],
+        beds: room.beds
+      })));
+    })
+    .catch(err => console.error(err))
+    .finally(() => setIsLoadingRooms(false));
+  };
+
+  const handlePaymentSuccess = () => {
+    const roomObj = rooms.find(r => r.room_number === selectedRoom);
+    if (!roomObj) return;
+
+    const availableBed = roomObj.beds?.find(b => !b.student_occupant);
+    if (!availableBed) {
+      toast.error("No beds available in this room!");
+      setIsPaymentModalOpen(false);
+      return;
+    }
+
+    fetch(`http://127.0.0.1:8000/api/rooms/${roomObj.id}/book_bed/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        student_id: studentId,
+        bed_id: availableBed.id
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.error) {
+        toast.error(data.error);
+        setIsPaymentModalOpen(false);
+      } else {
+        toast.success(`Successfully booked ${roomObj.room_number}`);
+        setIsPaymentModalOpen(false);
+        setIsRoomModalOpen(false);
+        fetchRooms();
+      }
+    })
+    .catch(err => {
+      toast.error("Failed to book bed.");
+      console.error(err);
+      setIsPaymentModalOpen(false);
+    });
+  };
+
+  const handleBookSpecificBed = (room_id, bed_id) => {
+    fetch(`http://127.0.0.1:8000/api/rooms/${room_id}/book_bed/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        student_id: studentId,
+        bed_id: bed_id
+      })
+    })
+    .then(res => res.json())
+    .then(data => {
+      if (data.error) {
+        toast.error(data.error);
+      } else {
+        toast.success(`Bed booked successfully!`);
+        fetchRooms();
+        handleFetchRecommendations();
+      }
+    })
+    .catch(err => console.error(err));
+  };
+
   const notices = [
     {
       id: 1,
@@ -50,27 +156,6 @@ export default function StudentDashboard() {
     },
   ];
 
-  // Dummy Data for Recommended Rooms
-  const recommendedRooms = [
-    {
-      id: 101,
-      roomNumber: 'A-204',
-      matchScore: 95,
-      tags: ['Veg', 'Early Bird', 'Quiet'],
-    },
-    {
-      id: 102,
-      roomNumber: 'B-301',
-      matchScore: 88,
-      tags: ['Non-Veg', 'Night Owl', 'Balcony'],
-    },
-    {
-      id: 103,
-      roomNumber: 'A-110',
-      matchScore: 82,
-      tags: ['Veg', 'Flexible', 'Ground Floor'],
-    },
-  ];
 
   // Handle Image Selection
   const handleImageChange = (e) => {
@@ -112,7 +197,6 @@ export default function StudentDashboard() {
     formData.append('title', title);
     formData.append('description', description);
     formData.append('category', category);
-    formData.append('student', 1); // Mock student ID
     if (image) {
       formData.append('image', image);
     }
@@ -196,9 +280,9 @@ export default function StudentDashboard() {
                   <Sparkles size={14} className="text-amber-600" /> AI Matched
                 </span>
               </h2>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-                {recommendedRooms.map((room) => (
-                  <div key={room.id} className="relative bg-white rounded-3xl p-6 shadow-sm border border-gray-100 hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] hover:-translate-y-1 transition-all duration-300 group overflow-hidden">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {recommendedRooms.length > 0 ? recommendedRooms.map((room) => (
+                  <div key={room.id} className="relative bg-white rounded-3xl p-6 shadow-sm border border-gray-100 hover:shadow-[0_8px_30px_rgb(0,0,0,0.06)] transition-all duration-300 group overflow-hidden">
                     <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-green-50 to-transparent opacity-50 rounded-bl-full pointer-events-none group-hover:scale-110 transition-transform"></div>
                     
                     <div className="flex justify-between items-start mb-5 relative z-10">
@@ -210,19 +294,73 @@ export default function StudentDashboard() {
                       </div>
                     </div>
                     
-                    <div className="flex flex-wrap gap-2 mt-4 relative z-10">
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      {room.beds.map((bed) => (
+                        <button
+                          key={bed.id}
+                          disabled={!!bed.student_occupant}
+                          onClick={() => handleBookSpecificBed(room.id, bed.id)}
+                          className={`p-3 rounded-xl border-2 flex flex-col items-center justify-center transition-all ${
+                            bed.student_occupant 
+                              ? 'bg-red-50 border-red-100 text-red-400 cursor-not-allowed' 
+                              : 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 hover:scale-105'
+                          }`}
+                        >
+                          <span className="text-xs font-bold">Bed {bed.bed_number}</span>
+                          <span className="text-[10px] opacity-70">{bed.deck}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 relative z-10">
                       {room.tags.map((tag, index) => (
-                        <span key={index} className="text-xs font-semibold text-gray-600 bg-gray-50 border border-gray-100 px-3 py-1.5 rounded-lg">
+                        <span key={index} className="text-[10px] font-semibold text-gray-600 bg-gray-50 border border-gray-100 px-2 py-1 rounded-lg">
                           {tag}
                         </span>
                       ))}
                     </div>
-                    
-                    <button className="w-full mt-6 bg-gray-900 text-white font-bold py-3 rounded-xl hover:bg-indigo-600 transition-colors text-sm shadow-md hover:shadow-lg relative z-10 flex items-center justify-center gap-2 group-hover:gap-3">
-                      View Room <span className="transition-all">→</span>
-                    </button>
                   </div>
-                ))}
+                )) : (
+                  <div className="col-span-full bg-gray-50 border-2 border-dashed border-gray-200 rounded-3xl p-10 text-center">
+                    <p className="text-gray-500 font-medium">Use the "Find a Room" panel to get AI recommendations based on your preferences!</p>
+                  </div>
+                )}
+              </div>
+            </section>
+
+            {/* My Complaints Section */}
+            <section>
+              <h2 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <Bell size={20} className="text-indigo-600" /> My Complaints
+              </h2>
+              <div className="space-y-4">
+                {myComplaints.length > 0 ? myComplaints.map((complaint) => (
+                  <div key={complaint.id} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex justify-between items-center">
+                    <div>
+                      <h4 className="font-bold text-gray-900">{complaint.category}</h4>
+                      <p className="text-sm text-gray-500 line-clamp-1">{complaint.description}</p>
+                      <div className="flex items-center gap-3 mt-2">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          complaint.status === 'Resolved' ? 'bg-green-100 text-green-700' :
+                          complaint.status === 'In Progress' ? 'bg-blue-100 text-blue-700' :
+                          'bg-amber-100 text-amber-700'
+                        }`}>
+                          {complaint.status}
+                        </span>
+                        <span className="text-[10px] font-bold text-indigo-600 flex items-center gap-1">
+                          <Wrench size={10} /> {complaint.assigned_staff || 'Triage in Progress'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-[10px] font-bold text-gray-400">{complaint.timestamp ? new Date(complaint.timestamp).toLocaleDateString() : ''}</p>
+                    </div>
+                  </div>
+                )) : (
+                  <div className="bg-white p-8 rounded-2xl border border-dashed border-gray-200 text-center">
+                    <p className="text-gray-400 text-sm">No complaints filed yet.</p>
+                  </div>
+                )}
               </div>
             </section>
           </div>
@@ -438,6 +576,15 @@ export default function StudentDashboard() {
                       <option value="late">Night Owl (Sleep late, wake up late)</option>
                     </select>
                   </div>
+
+                  <button 
+                    onClick={handleFetchRecommendations}
+                    disabled={isLoadingRooms}
+                    className="w-full bg-indigo-600 text-white font-bold py-3 rounded-xl hover:bg-indigo-700 transition-all shadow-md flex items-center justify-center gap-2"
+                  >
+                    {isLoadingRooms ? 'Finding Best Matches...' : 'Find Compatible Roommates'}
+                    {!isLoadingRooms && <Sparkles size={18} />}
+                  </button>
                 </div>
 
                 {/* Right: Interactive Room Map */}
@@ -462,8 +609,8 @@ export default function StudentDashboard() {
                   {/* Seat Grid */}
                   <div className="grid grid-cols-5 gap-3 flex-grow">
                     {dummyRooms.map(room => {
-                      const isOccupied = room.status === 'occupied';
-                      const isSelected = selectedRoom === room.roomNumber;
+                      const isOccupied = room.occupancy_status === 'occupied';
+                      const isSelected = selectedRoom === room.room_number;
                       
                       let btnClass = "relative flex items-center justify-center h-12 w-full rounded-xl border-2 font-bold text-sm transition-all duration-200 ";
                       if (isOccupied) {
@@ -478,29 +625,23 @@ export default function StudentDashboard() {
                         <button
                           key={room.id}
                           disabled={isOccupied}
-                          onClick={() => setSelectedRoom(room.roomNumber)}
+                          onClick={() => setSelectedRoom(room.room_number)}
                           className={btnClass}
                           title={isOccupied ? "Room is full" : "Click to select"}
                         >
-                          {room.roomNumber}
+                          {room.room_number}
                         </button>
                       );
                     })}
                   </div>
 
-                  {/* Submission Button */}
+                                    {/* Submission Button */}
                   <button 
                     disabled={!selectedRoom}
-                    onClick={() => {
-                      toast.success(`Booking request sent for ${selectedRoom}! Waiting for Admin approval.`, {
-                        icon: '🎉'
-                      });
-                      setIsRoomModalOpen(false);
-                      setSelectedRoom(null);
-                    }}
+                    onClick={() => setIsPaymentModalOpen(true)}
                     className="w-full mt-8 bg-gray-900 text-white font-bold py-4 rounded-xl hover:bg-indigo-600 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
-                    {selectedRoom ? `Confirm & Book ${selectedRoom}` : 'Select a green room to book'} 
+                    {selectedRoom ? `Confirm & Book ${selectedRoom}` : 'Select a green room'} 
                     {selectedRoom && <CheckCircle size={18} />}
                   </button>
 
@@ -511,6 +652,19 @@ export default function StudentDashboard() {
           </div>
         </div>
       )}
+
+      {/* Payment Gateway Modal */}
+      {isPaymentModalOpen && (
+        <PaymentModal 
+          isOpen={isPaymentModalOpen}
+          onClose={() => setIsPaymentModalOpen(false)}
+          onSuccess={handlePaymentSuccess}
+          amount={5000} 
+        />
+      )}
     </div>
   );
 }
+
+
+
