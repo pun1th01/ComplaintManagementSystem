@@ -111,8 +111,6 @@ export default function StudentDashboard() {
           beds: room.beds,
           occupants: room.current_occupants || []
         })));
-        // DO NOT close the modal. Let the right panel update.
-        toast.success("AI Matching Complete! See your Recommended Rooms on the right.", { icon: '🤖' });
       } else {
         setRecommendedRooms([]);
       }
@@ -120,6 +118,12 @@ export default function StudentDashboard() {
     .catch(err => console.error(err))
     .finally(() => setIsLoadingRooms(false));
   };
+
+  useEffect(() => {
+    if (isRoomModalOpen) {
+      handleFetchRecommendations();
+    }
+  }, [roomPreferences, isRoomModalOpen]);
 
   const handlePaymentSuccess = () => {
     if (!selectedRoom || !selectedBed) return;
@@ -704,19 +708,6 @@ export default function StudentDashboard() {
                       <option value="late">Night Owl</option>
                     </select>
                   </div>
-
-                  <button 
-                    type="button"
-                    onClick={handleFetchRecommendations}
-                    disabled={isLoadingRooms}
-                    className="w-full bg-indigo-600 text-white font-bold py-4 rounded-xl hover:bg-indigo-700 hover:shadow-lg transition-all flex items-center justify-center gap-2 mt-4"
-                  >
-                    {isLoadingRooms ? (
-                      <><Activity className="animate-spin" size={18} /> Finding Best Matches...</>
-                    ) : (
-                      <><Sparkles size={18} /> Find Compatible Roommates</>
-                    )}
-                  </button>
                 </div>
 
                 {/* Right: Interactive Room Map */}
@@ -732,9 +723,17 @@ export default function StudentDashboard() {
                           <div key={room.id} className="bg-gray-50 border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
                             <div className="flex justify-between items-center mb-3">
                               <h4 className="font-extrabold text-gray-900 text-lg">{room.roomNumber}</h4>
-                              <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
-                                <Activity size={12} /> {room.matchScore}% Match
-                              </span>
+                              <div className="flex items-center gap-2">
+                                <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                                  <Activity size={12} /> {room.matchScore}% Match
+                                </span>
+                                <button 
+                                  onClick={() => setSelectedRoomDetails(room)}
+                                  className="text-[10px] font-bold px-2 py-1 bg-indigo-50 text-indigo-700 rounded-md hover:bg-indigo-100 transition-colors border border-indigo-100"
+                                >
+                                  View Details
+                                </button>
+                              </div>
                             </div>
                             <div className="grid grid-cols-2 gap-2 mb-3">
                               {room.beds.map((bed) => (
