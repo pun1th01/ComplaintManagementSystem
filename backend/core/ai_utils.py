@@ -105,20 +105,22 @@ def categorize_complaint(text, image_bytes=None, mime_type="image/jpeg"):
     except json.JSONDecodeError as e:
         print(f"JSON Decode Error: {e}. Raw response was: {response_text}")
         # Fallback if response is not valid JSON
+        safe_summary = text[:60] + "..." if len(text) > 60 else text
         return {
             'category': 'General',
             'priority_score': 5,
-            'summary': 'Could not parse summary.'
+            'summary': safe_summary
         }
     except Exception as e:
         import traceback
         traceback.print_exc()
         print(f"General Error in AI extraction: {e}")
         # Handle other errors gracefully
+        safe_summary = text[:60] + "..." if len(text) > 60 else text
         return {
             'category': 'General',
             'priority_score': 5,
-            'summary': 'Error parsing details.'
+            'summary': safe_summary
         }
 
 
