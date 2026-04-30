@@ -281,18 +281,29 @@ export default function StudentDashboard() {
       <div className="max-w-6xl mx-auto space-y-8 relative z-10">
         
         {/* Welcome Header */}
-        <header className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
+        <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="w-full">
+            <div className="flex items-center justify-between sm:justify-start w-full gap-2 mb-2">
               <span className="bg-indigo-600 text-white text-xs font-black px-3 py-1 rounded-full tracking-widest uppercase shadow-sm">SMART PG</span>
+              <div className="sm:hidden relative">
+                <button 
+                  onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                  className="relative p-2.5 bg-white rounded-full border border-gray-200 hover:border-indigo-300 hover:shadow-md transition-all group"
+                >
+                  <Bell className="text-gray-600 group-hover:text-indigo-600 group-hover:animate-wiggle" size={20} />
+                  {notifications.length > 0 && (
+                    <span className="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full animate-pulse"></span>
+                  )}
+                </button>
+              </div>
             </div>
-            <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight flex items-center gap-3">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-gray-900 tracking-tight flex items-center gap-3">
               Welcome back, {studentName}!
             </h1>
             <p className="text-gray-500 mt-1 text-sm font-medium flex items-center gap-2">
-              <Activity size={14} className="text-indigo-500 animate-pulse" /> Student Portal Active
+              <Activity size={14} className="text-indigo-500 animate-pulse" /> Portal Active
               {studentDetails && studentDetails.payment_status && (
-                <span className={`ml-4 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                <span className={`ml-2 px-2 py-0.5 rounded-full text-[10px] font-bold ${
                   studentDetails.payment_status === 'Completed' ? 'bg-green-100 text-green-700' :
                   studentDetails.payment_status === 'Pending' ? 'bg-yellow-100 text-yellow-700' :
                   'bg-red-100 text-red-700'
@@ -303,7 +314,7 @@ export default function StudentDashboard() {
             </p>
           </div>
           
-          <div className="relative">
+          <div className="hidden sm:block relative">
             <button 
               onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
               className="relative p-3 bg-white rounded-full border border-gray-200 hover:border-indigo-300 hover:shadow-md transition-all group"
@@ -646,8 +657,8 @@ export default function StudentDashboard() {
               <X size={24} />
             </button>
             
-            <div className="p-8 md:p-10">
-              <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight flex items-center gap-3">
+            <div className="p-5 sm:p-8 md:p-10">
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight flex items-center gap-3">
                 <Search className="text-indigo-600" /> Find Your Room
               </h2>
               <p className="text-gray-500 mt-2 mb-8 font-medium">Enter your preferences and select an available room.</p>
@@ -724,7 +735,7 @@ export default function StudentDashboard() {
                       <div className="space-y-4">
                         {recommendedRooms.map((room) => (
                           <div key={room.id} className="bg-gray-50 border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
-                            <div className="flex justify-between items-center mb-3">
+                            <div className="flex flex-wrap justify-between items-center mb-3 gap-2">
                               <h4 className="font-extrabold text-gray-900 text-lg">{room.roomNumber}</h4>
                               <div className="flex items-center gap-2">
                                 <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
@@ -893,12 +904,12 @@ export default function StudentDashboard() {
       {selectedRoomDetails && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/60 backdrop-blur-sm transition-all duration-300">
           <div className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden relative animate-in fade-in zoom-in duration-200">
-            <div className="bg-indigo-600 p-6 text-white flex justify-between items-center">
+            <div className="bg-indigo-600 p-4 sm:p-6 text-white flex justify-between items-center">
               <div>
-                <h2 className="text-2xl font-extrabold tracking-tight flex items-center gap-2">
-                  <Sparkles size={24} className="text-indigo-200" /> {selectedRoomDetails.roomNumber} Analysis
+                <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight flex items-center gap-2">
+                  <Sparkles size={24} className="text-indigo-200 hidden sm:block" /> {selectedRoomDetails.roomNumber} Analysis
                 </h2>
-                <p className="text-indigo-100 text-sm mt-1 font-medium">AI Match Breakdown</p>
+                <p className="text-indigo-100 text-xs sm:text-sm mt-1 font-medium">AI Match Breakdown</p>
               </div>
               <button 
                 onClick={() => setSelectedRoomDetails(null)}
@@ -908,14 +919,14 @@ export default function StudentDashboard() {
               </button>
             </div>
             
-            <div className="p-8">
-              <div className="flex items-center gap-6 mb-8 bg-gray-50 p-6 rounded-2xl border border-gray-100">
-                <div className="w-24 h-24 rounded-full bg-emerald-100 flex items-center justify-center border-4 border-white shadow-md shrink-0">
-                  <span className="text-3xl font-black text-emerald-600">{selectedRoomDetails.matchScore}%</span>
+            <div className="p-5 sm:p-8">
+              <div className="flex flex-col sm:flex-row items-center sm:items-start text-center sm:text-left gap-4 sm:gap-6 mb-6 sm:mb-8 bg-gray-50 p-4 sm:p-6 rounded-2xl border border-gray-100">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-emerald-100 flex items-center justify-center border-4 border-white shadow-md shrink-0">
+                  <span className="text-2xl sm:text-3xl font-black text-emerald-600">{selectedRoomDetails.matchScore}%</span>
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-gray-800">Overall Compatibility Score</h3>
-                  <p className="text-sm text-gray-500 mt-1">Based on Course, Year, Diet, and Sleep Schedule mapping with current occupants.</p>
+                  <h3 className="text-base sm:text-lg font-bold text-gray-800">Overall Compatibility Score</h3>
+                  <p className="text-xs sm:text-sm text-gray-500 mt-1">Based on Course, Year, Diet, and Sleep Schedule mapping with current occupants.</p>
                 </div>
               </div>
               

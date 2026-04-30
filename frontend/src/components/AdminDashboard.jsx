@@ -120,17 +120,17 @@ export default function AdminDashboard() {
             <p className="text-gray-500 mt-2 text-sm">Real-time facility triage & Student Management.</p>
           </div>
           
-          <div className="flex items-center gap-3">
-            <div className="bg-white p-1 rounded-lg border border-gray-200 shadow-sm flex items-center">
+          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto mt-2 sm:mt-0">
+            <div className="bg-white p-1 rounded-lg border border-gray-200 shadow-sm flex flex-wrap sm:flex-nowrap items-center w-full sm:w-auto">
               <button 
                 onClick={() => setActiveTab('complaints')}
-                className={`px-4 py-2 text-sm font-bold rounded-md transition-all flex items-center gap-2 ${activeTab === 'complaints' ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}
+                className={`flex-1 sm:flex-none justify-center px-4 py-2 text-sm font-bold rounded-md transition-all flex items-center gap-2 ${activeTab === 'complaints' ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}
               >
                 <Activity size={16} /> Complaints
               </button>
               <button 
                 onClick={() => setActiveTab('students')}
-                className={`px-4 py-2 text-sm font-bold rounded-md transition-all flex items-center gap-2 ${activeTab === 'students' ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}
+                className={`flex-1 sm:flex-none justify-center px-4 py-2 text-sm font-bold rounded-md transition-all flex items-center gap-2 ${activeTab === 'students' ? 'bg-indigo-50 text-indigo-700 shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}
               >
                 <Users size={16} /> Students & Payments
               </button>
@@ -140,7 +140,7 @@ export default function AdminDashboard() {
               <button 
                 onClick={handleEscalate}
                 disabled={isEscalating}
-                className="flex items-center space-x-2 bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-lg shadow font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full sm:w-auto flex justify-center items-center space-x-2 bg-red-600 hover:bg-red-700 text-white px-5 py-2.5 rounded-lg shadow font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isEscalating ? (
                   <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -225,7 +225,7 @@ export default function AdminDashboard() {
 
           {/* 3. The Triage Table */}
           <div className="bg-white rounded-xl shadow-sm border border-gray-100 lg:col-span-2 overflow-hidden flex flex-col h-full">
-            <div className="p-6 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
+            <div className="p-4 sm:p-6 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
               <div>
                 <h2 className="text-lg font-bold text-gray-800">Triage Table</h2>
                 <p className="text-xs text-gray-500 font-medium tracking-wide">AUTOMATICALLY SORTED BY PRIORITY</p>
@@ -235,13 +235,13 @@ export default function AdminDashboard() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-white text-gray-400 text-xs uppercase tracking-wider border-b border-gray-100">
-                    <th className="py-4 px-6 font-semibold w-24">Urgency</th>
-                    <th className="py-4 px-6 font-semibold">Category</th>
-                    <th className="py-4 px-6 font-semibold hidden md:table-cell">Description</th>
-                      <th className="py-4 px-6 font-semibold">AI Summary</th>
-                      <th className="py-4 px-6 font-semibold w-16 text-center">Image</th>
-                      <th className="py-4 px-6 font-semibold">Assign Staff</th>
-                    <th className="py-4 px-6 font-semibold w-40">Date</th>
+                    <th className="py-3 px-3 sm:px-6 font-semibold w-16 sm:w-24">Urgency</th>
+                    <th className="py-3 px-3 sm:px-6 font-semibold">Category</th>
+                    <th className="py-3 px-3 sm:px-6 font-semibold hidden md:table-cell">Description</th>
+                      <th className="py-3 px-3 sm:px-6 font-semibold hidden sm:table-cell">AI Summary</th>
+                      <th className="py-3 px-3 sm:px-6 font-semibold w-12 sm:w-16 text-center">Image</th>
+                      <th className="py-3 px-3 sm:px-6 font-semibold">Assign Staff</th>
+                    <th className="py-3 px-3 sm:px-6 font-semibold w-32 sm:w-40 hidden sm:table-cell">Date</th>
                   </tr>
                 </thead>
                 <tbody className="text-sm">
@@ -257,8 +257,8 @@ export default function AdminDashboard() {
                           isCritical ? 'bg-red-50 text-red-900 border-l-4 border-red-500' : 'bg-white border-l-4 border-transparent'
                         }`}
                       >
-                        <td className="py-4 px-6">
-                            <span className={`inline-flex min-w-[36px] items-center justify-center px-2 py-1 rounded-md text-xs font-bold ${
+                        <td className="py-3 px-3 sm:px-6">
+                            <span className={`inline-flex min-w-[28px] sm:min-w-[36px] items-center justify-center px-1 sm:px-2 py-1 rounded-md text-[10px] sm:text-xs font-bold ${
                               isCritical ? 'bg-red-600 text-white shadow-sm' : 
                               complaint.priority_score >= 5 ? 'bg-orange-500 text-white' : 
                               'bg-gray-200 text-gray-700'
@@ -266,27 +266,27 @@ export default function AdminDashboard() {
                               {complaint.priority_score}
                             </span>
                         </td>
-                        <td className={`py-4 px-6 font-bold tracking-tight ${isCritical ? 'text-red-900' : 'text-gray-800'}`}>
+                        <td className={`py-3 px-3 sm:px-6 font-bold tracking-tight text-xs sm:text-sm ${isCritical ? 'text-red-900' : 'text-gray-800'}`}>
                           {cat}
                         </td>
-                        <td className="py-4 px-6 text-gray-600 font-medium hidden md:table-cell max-w-[200px] truncate" title={complaint.description}>
+                        <td className="py-3 px-3 sm:px-6 text-gray-600 font-medium hidden md:table-cell max-w-[200px] truncate" title={complaint.description}>
                           {complaint.description}
                         </td>
-                                                  <td className="py-4 px-6">
-                            <span className="italic text-slate-500 font-medium text-xs">
+                                                  <td className="py-3 px-3 sm:px-6 hidden sm:table-cell">
+                            <span className="italic text-slate-500 font-medium text-[10px] sm:text-xs line-clamp-2">
                               {complaint.ai_summary || '-'}
                             </span>
                           </td>
-                          <td className="py-4 px-6 text-center">
+                          <td className="py-3 px-3 sm:px-6 text-center">
                             {hasImage ? (
-                              <a href={complaint.image_url} target="_blank" rel="noreferrer" className="inline-block p-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors">
-                                <ImageIcon size={16} />
+                              <a href={complaint.image_url} target="_blank" rel="noreferrer" className="inline-block p-1.5 sm:p-2 bg-indigo-50 text-indigo-600 rounded-lg hover:bg-indigo-100 transition-colors">
+                                <ImageIcon size={14} className="sm:w-4 sm:h-4" />
                               </a>
                             ) : (
                               <span className="text-gray-300">-</span>
                             )}
                           </td>
-                          <td className="py-4 px-6">
+                          <td className="py-3 px-3 sm:px-6">
                             <select 
                               value={complaint.assigned_staff || 'Unassigned'}
                               onChange={async (e) => {
@@ -314,7 +314,7 @@ export default function AdminDashboard() {
                               <option value="IT Support">IT Support</option>
                             </select>
                           </td>
-                          <td className="py-4 px-6 text-gray-400 font-medium text-xs whitespace-nowrap">
+                          <td className="py-3 px-3 sm:px-6 text-gray-400 font-medium text-[10px] sm:text-xs whitespace-nowrap hidden sm:table-cell">
                           {complaint.timestamp ? format(new Date(complaint.timestamp), "MMM d, h:mm a") : 'Unknown Date'}
                         </td>
                       </tr>
@@ -350,10 +350,10 @@ export default function AdminDashboard() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-white text-gray-400 text-xs uppercase tracking-wider border-b border-gray-100">
-                    <th className="py-4 px-6 font-semibold">Student Name</th>
-                    <th className="py-4 px-6 font-semibold">Course & Year</th>
-                    <th className="py-4 px-6 font-semibold">Room & Bed</th>
-                    <th className="py-4 px-6 font-semibold">Payment Status</th>
+                    <th className="py-3 px-3 sm:px-6 font-semibold">Student Name</th>
+                    <th className="py-3 px-3 sm:px-6 font-semibold hidden sm:table-cell">Course & Year</th>
+                    <th className="py-3 px-3 sm:px-6 font-semibold">Room & Bed</th>
+                    <th className="py-3 px-3 sm:px-6 font-semibold">Payment Status</th>
                   </tr>
                 </thead>
                 <tbody className="text-sm">
@@ -365,13 +365,16 @@ export default function AdminDashboard() {
 
                     return (
                       <tr key={student.id} className="border-b border-gray-50 last:border-0 hover:bg-gray-50 transition duration-150">
-                        <td className="py-4 px-6 font-bold text-gray-800">{student.name}</td>
-                        <td className="py-4 px-6 text-gray-600">{student.course} • Year {student.year}</td>
-                        <td className="py-4 px-6 text-gray-600">
-                          {student.room ? `Room ${student.room.room_number}` : 'No Room'} 
-                          {student.bed ? ` (Bed ${student.bed.bed_number})` : ''}
+                        <td className="py-3 px-3 sm:px-6 font-bold text-gray-800 text-xs sm:text-sm">
+                          {student.name}
+                          <div className="sm:hidden text-[10px] text-gray-500 font-normal mt-0.5">{student.course} • Yr {student.year}</div>
                         </td>
-                        <td className="py-4 px-6">
+                        <td className="py-3 px-3 sm:px-6 text-gray-600 text-xs sm:text-sm hidden sm:table-cell">{student.course} • Year {student.year}</td>
+                        <td className="py-3 px-3 sm:px-6 text-gray-600 text-xs sm:text-sm">
+                          {student.room ? `Rm ${student.room.room_number}` : 'No Room'} 
+                          {student.bed ? ` (B${student.bed.bed_number})` : ''}
+                        </td>
+                        <td className="py-3 px-3 sm:px-6">
                           <select 
                             value={student.payment_status || 'Not Paid'}
                             onChange={async (e) => {

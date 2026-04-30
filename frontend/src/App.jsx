@@ -80,16 +80,16 @@ function App() {
                 <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold">S</div>
                 <span className="font-extrabold text-xl tracking-tight text-gray-900">SMART PG</span>
               </div>
-              <div className="flex items-center space-x-4">
-                <span className="text-sm font-semibold text-gray-600 py-1.5 capitalize">
+              <div className="flex items-center space-x-2 sm:space-x-4">
+                <span className="hidden sm:block text-sm font-semibold text-gray-600 py-1.5 capitalize">
                   Welcome, {storedUser?.name || storedUser?.user?.name || 'User'}
                 </span>
-                <span className="text-sm font-bold text-gray-600 bg-gray-100 px-3 py-1.5 rounded-full capitalize">
+                <span className="text-xs sm:text-sm font-bold text-gray-600 bg-gray-100 px-2 sm:px-3 py-1 sm:py-1.5 rounded-full capitalize">
                   {storedUser?.role} Mode
                 </span>
                 <button 
                   onClick={handleLogout}
-                  className="text-sm font-bold text-red-600 hover:text-red-800 hover:bg-red-50 px-4 py-2 rounded-lg transition-colors"
+                  className="text-xs sm:text-sm font-bold text-red-600 hover:text-red-800 hover:bg-red-50 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg transition-colors"
                 >
                   Logout
                 </button>
@@ -103,8 +103,8 @@ function App() {
         <Routes>
           <Route path="/login" element={
             <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-              <div className="bg-white p-10 rounded-3xl shadow-xl w-full max-w-md text-center border border-gray-100">
-                <h1 className="text-4xl font-extrabold text-gray-900 mb-2">SMART PG</h1>
+              <div className="bg-white p-6 sm:p-10 rounded-3xl shadow-xl w-full max-w-md text-center border border-gray-100">
+                <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-2">SMART PG</h1>
                 <p className="text-gray-500 mb-8 text-sm">Sign in to your portal</p>
                 
                 <div className="space-y-4">
