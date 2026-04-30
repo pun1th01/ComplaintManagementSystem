@@ -92,6 +92,9 @@ export default function AdminDashboard() {
         {/* Header */}
         <header className="flex flex-col sm:flex-row sm:justify-between sm:items-end gap-4">
           <div>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="bg-indigo-600 text-white text-xs font-black px-3 py-1 rounded-full tracking-widest uppercase shadow-sm">SMART PG</span>
+            </div>
             <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Warden Dashboard</h1>
             <p className="text-gray-500 mt-2 text-sm">Real-time facility triage & AI monitoring.</p>
           </div>

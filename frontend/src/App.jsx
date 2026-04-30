@@ -77,8 +77,8 @@ function App() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold">H</div>
-                <span className="font-extrabold text-xl tracking-tight text-gray-900">HostelSystem</span>
+                <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white font-bold">S</div>
+                <span className="font-extrabold text-xl tracking-tight text-gray-900">SMART PG</span>
               </div>
               <div className="flex items-center space-x-4">
                 <span className="text-sm font-semibold text-gray-600 py-1.5 capitalize">
@@ -104,7 +104,7 @@ function App() {
           <Route path="/login" element={
             <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
               <div className="bg-white p-10 rounded-3xl shadow-xl w-full max-w-md text-center border border-gray-100">
-                <h1 className="text-4xl font-extrabold text-gray-900 mb-2">Hostel AI</h1>
+                <h1 className="text-4xl font-extrabold text-gray-900 mb-2">SMART PG</h1>
                 <p className="text-gray-500 mb-8 text-sm">Sign in to your portal</p>
                 
                 <div className="space-y-4">
