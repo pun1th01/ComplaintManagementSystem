@@ -89,9 +89,12 @@ import os
 DATABASES = {
     'default': dj_database_url.config(
         default=os.environ.get('DATABASE_URL'),
-        conn_max_age=600,
+        conn_max_age=0,  # Fix for Neon: Don't keep connections alive indefinitely if dropping
         conn_health_checks=True,
     )
+}
+DATABASES['default']['OPTIONS'] = {
+    'connect_timeout': 10,
 }
 
 
