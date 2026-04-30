@@ -74,7 +74,10 @@ def categorize_complaint(text, image_bytes=None, mime_type="image/jpeg"):
         response_text = message.choices[0].message.content.strip()
         
         # Robust fallback extraction for strict JSON enforcing
-        # If the LLM wraps the response in markdown, or adds chatter, find the first '{' and last '}'
+        # Strip out any markdown formatting (like ```json ... ```)
+        response_text = re.sub(r'^```(?:json)?|```$', '', response_text.strip(), flags=re.MULTILINE).strip()
+        
+        # If the LLM adds chatter, find the first '{' and last '}'
         match = re.search(r'\{.*\}', response_text, re.DOTALL)
         if match:
             response_text = match.group(0)

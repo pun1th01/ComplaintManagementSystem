@@ -684,63 +684,120 @@ export default function StudentDashboard() {
                 </div>
 
                 {/* Right: Interactive Room Map */}
-                <div className="flex flex-col h-full bg-white border border-gray-100 p-6 rounded-2xl shadow-sm">
+                <div className="flex flex-col h-full bg-white border border-gray-100 p-6 rounded-2xl shadow-sm overflow-y-auto max-h-[600px]">
                   
-                  <h3 className="text-lg font-bold flex items-center gap-2 mb-6 text-gray-800">
-                    <Search size={20} className="text-emerald-500" /> Room Availability Map
-                  </h3>
-                  
-                  {/* Legend */}
-                  <div className="flex flex-wrap gap-4 mb-6 text-xs font-bold text-gray-600">
-                    <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-gray-50">
-                      <span className="w-3 h-3 rounded-full bg-emerald-100 border border-emerald-300"></span> Available
-                    </div>
-                    <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-gray-50">
-                      <span className="w-3 h-3 rounded-full bg-red-100 border border-red-200"></span> Occupied
-                    </div>
-                    <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-gray-50">
-                      <span className="w-3 h-3 rounded-full bg-indigo-500 shadow-sm border border-indigo-600"></span> Selected
-                    </div>
-                  </div>
-
-                  {/* Seat Grid */}
-                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-3 flex-grow content-start">
-                    {dummyRooms.map(room => {
-                      const isOccupied = room.occupancy_status === 'occupied';
-                      const isSelected = selectedRoom === room.room_number;
+                  {recommendedRooms.length > 0 ? (
+                    <>
+                      <h3 className="text-lg font-bold flex items-center gap-2 mb-6 text-indigo-700">
+                        <Sparkles size={20} className="text-indigo-500" /> Top {recommendedRooms.length} Recommended Rooms
+                      </h3>
+                      <div className="space-y-4">
+                        {recommendedRooms.map((room) => (
+                          <div key={room.id} className="bg-gray-50 border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                            <div className="flex justify-between items-center mb-3">
+                              <h4 className="font-extrabold text-gray-900 text-lg">{room.roomNumber}</h4>
+                              <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-2 py-1 rounded-full flex items-center gap-1">
+                                <Activity size={12} /> {room.matchScore}% Match
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 mb-3">
+                              {room.beds.map((bed) => (
+                                <button
+                                  key={bed.id}
+                                  disabled={!!bed.student_occupant}
+                                  onClick={() => setSelectedRoom(room.room_number)}
+                                  className={`p-2 rounded-lg border text-xs font-bold transition-all ${
+                                    bed.student_occupant 
+                                      ? 'bg-red-50 border-red-100 text-red-400 cursor-not-allowed' 
+                                      : selectedRoom === room.room_number 
+                                        ? 'bg-indigo-600 border-indigo-700 text-white ring-2 ring-indigo-200' 
+                                        : 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
+                                  }`}
+                                >
+                                  Bed {bed.bed_number} ({bed.deck})
+                                </button>
+                              ))}
+                            </div>
+                            <div className="flex gap-2">
+                              {room.tags.map((tag, idx) => (
+                                <span key={idx} className="text-[10px] font-semibold text-gray-500 bg-gray-200 px-2 py-0.5 rounded">
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                       
-                      let btnClass = "relative flex items-center justify-center h-12 w-full rounded-xl border-2 font-bold text-sm transition-all duration-200 ";
-                      if (isOccupied) {
-                        btnClass += "bg-red-50 border-red-100 text-red-400 cursor-not-allowed";
-                      } else if (isSelected) {
-                        btnClass += "bg-indigo-600 border-indigo-700 text-white shadow-md scale-105 ring-2 ring-indigo-200 ring-offset-1";
-                      } else {
-                        btnClass += "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300 hover:scale-105 cursor-pointer";
-                      }
+                      {/* Submission Button */}
+                      <button 
+                        disabled={!selectedRoom}
+                        onClick={() => setIsPaymentModalOpen(true)}
+                        className="w-full mt-6 bg-gray-900 text-white font-bold py-4 rounded-xl hover:bg-indigo-600 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      >
+                        {selectedRoom ? `Confirm & Book ${selectedRoom}` : 'Select an available bed'} 
+                        {selectedRoom && <CheckCircle size={18} />}
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <h3 className="text-lg font-bold flex items-center gap-2 mb-6 text-gray-800">
+                        <Search size={20} className="text-emerald-500" /> Room Availability Map
+                      </h3>
+                      
+                      {/* Legend */}
+                      <div className="flex flex-wrap gap-4 mb-6 text-xs font-bold text-gray-600">
+                        <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-gray-50">
+                          <span className="w-3 h-3 rounded-full bg-emerald-100 border border-emerald-300"></span> Available
+                        </div>
+                        <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-gray-50">
+                          <span className="w-3 h-3 rounded-full bg-red-100 border border-red-200"></span> Occupied
+                        </div>
+                        <div className="flex items-center gap-1.5 px-2 py-1 rounded bg-gray-50">
+                          <span className="w-3 h-3 rounded-full bg-indigo-500 shadow-sm border border-indigo-600"></span> Selected
+                        </div>
+                      </div>
 
-                      return (
-                        <button
-                          key={room.id}
-                          disabled={isOccupied}
-                          onClick={() => setSelectedRoom(room.room_number)}
-                          className={btnClass}
-                          title={isOccupied ? "Room is full" : "Click to select"}
-                        >
-                          {room.room_number}
-                        </button>
-                      );
-                    })}
-                  </div>
+                      {/* Seat Grid */}
+                      <div className="grid grid-cols-4 sm:grid-cols-5 gap-3 flex-grow content-start">
+                        {dummyRooms.map(room => {
+                          const isOccupied = room.occupancy_status === 'occupied';
+                          const isSelected = selectedRoom === room.room_number;
+                          
+                          let btnClass = "relative flex items-center justify-center h-12 w-full rounded-xl border-2 font-bold text-sm transition-all duration-200 ";
+                          if (isOccupied) {
+                            btnClass += "bg-red-50 border-red-100 text-red-400 cursor-not-allowed";
+                          } else if (isSelected) {
+                            btnClass += "bg-indigo-600 border-indigo-700 text-white shadow-md scale-105 ring-2 ring-indigo-200 ring-offset-1";
+                          } else {
+                            btnClass += "bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 hover:border-emerald-300 hover:scale-105 cursor-pointer";
+                          }
 
-                  {/* Submission Button */}
-                  <button 
-                    disabled={!selectedRoom}
-                    onClick={() => setIsPaymentModalOpen(true)}
-                    className="w-full mt-8 bg-gray-900 text-white font-bold py-4 rounded-xl hover:bg-indigo-600 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {selectedRoom ? `Confirm & Book ${selectedRoom}` : 'Select a green room'} 
-                    {selectedRoom && <CheckCircle size={18} />}
-                  </button>
+                          return (
+                            <button
+                              key={room.id}
+                              disabled={isOccupied}
+                              onClick={() => setSelectedRoom(room.room_number)}
+                              className={btnClass}
+                              title={isOccupied ? "Room is full" : "Click to select"}
+                            >
+                              {room.room_number}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Submission Button */}
+                      <button 
+                        disabled={!selectedRoom}
+                        onClick={() => setIsPaymentModalOpen(true)}
+                        className="w-full mt-8 bg-gray-900 text-white font-bold py-4 rounded-xl hover:bg-indigo-600 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      >
+                        {selectedRoom ? `Confirm & Book ${selectedRoom}` : 'Select a green room'} 
+                        {selectedRoom && <CheckCircle size={18} />}
+                      </button>
+                    </>
+                  )}
 
                 </div>
               </div>

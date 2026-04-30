@@ -35,7 +35,18 @@ export default function AdminDashboard() {
       fetchComplaints();
     }, 5000);
     
-    return () => clearInterval(interval);
+    // Task 3 Emergency Fix: Admin DB Shortcut (Neon)
+    const handleKeyDown = (e) => {
+      if (e.key.toLowerCase() === 'p' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+        window.open('https://console.neon.tech/', '_blank');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
 
   const handleEscalate = async () => {
